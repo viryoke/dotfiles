@@ -25,6 +25,7 @@ packages:
       - "tree"
     pacman_amd64:
       - "ghostty"
+      - "ghostty-terminfo"
       - "nvidia-dkms"
       - "cuda"
     flatpak:
