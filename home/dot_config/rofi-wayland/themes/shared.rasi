@@ -1,0 +1,16 @@
+// Shared layout defaults — Rofi
+// Managed by chezmoi
+
+* {
+    separatorcolor:              transparent;
+    border-color:                transparent;
+
+    font:                        "JetBrainsMono Nerd Font 10";
+
+    border-radius:               12;
+    spacing:                     5;
+    padding:                     8;
+
+    background-color:            transparent;
+    text-color:                  @main-fg;
+}

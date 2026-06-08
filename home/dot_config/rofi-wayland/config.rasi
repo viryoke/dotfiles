@@ -1,0 +1,85 @@
+// Rofi-Wayland configuration — Gruvbox Material Dark
+// Managed by chezmoi
+
+configuration {
+    modi:                        "drun";
+    show-icons:                  true;
+    drun-display-format:         "{name}";
+    font:                        "JetBrainsMono Nerd Font 10";
+    icon-theme:                  "Papirus-Dark";
+}
+
+@theme "themes/shared"
+@theme "themes/gruvbox-dark"
+
+window {
+    height:                      33em;
+    width:                       63em;
+    transparency:                "real";
+    border-color:                @main-br;
+    background-color:            @main-bg;
+}
+
+mainbox {
+    orientation:                 horizontal;
+    children:                    [ "listbox" ];
+    background-color:            transparent;
+}
+
+listbox {
+    orientation:                 vertical;
+    children:                    [ "inputbar", "listview" ];
+    spacing:                     5;
+    background-color:            transparent;
+}
+
+inputbar {
+    children:                    [ "entry" ];
+    padding:                     8px;
+    background-color:            @main-bg;
+    border-radius:               12px;
+}
+
+entry {
+    placeholder:                 "Search...";
+    placeholder-color:           @main-fg;
+    text-color:                  @main-fg;
+    padding:                     6px;
+}
+
+listview {
+    columns:                     1;
+    lines:                       12;
+    spacing:                     4px;
+    cycle:                       true;
+    dynamic:                     true;
+    scrollbar:                   false;
+}
+
+element {
+    orientation:                 horizontal;
+    children:                    [ "element-icon", "element-text" ];
+    padding:                     8px;
+    border-radius:               12px;
+    spacing:                     8px;
+}
+
+element-icon {
+    size:                        2.5em;
+    vertical-align:              0.5;
+}
+
+element-text {
+    text-color:                  @main-fg;
+    vertical-align:              0.5;
+}
+
+element selected {
+    background-color:            @select-bg;
+    text-color:                  @select-fg;
+    border-color:                @main-br;
+}
+
+element-icon selected {
+    background-color:            transparent;
+}
