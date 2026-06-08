@@ -41,8 +41,8 @@ export PATH="$HOME/.cargo/bin:$PATH"
 # === Python ===
 export UV_CACHE_DIR="$HOME/.cache/uv"
 
-{{ if eq .chezmoi.hostname "macbook" }}
-# === Huawei Work Environment (macBook only) ===
+{{ if or (eq .chezmoi.hostname "macbook") (contains "MacBook" .chezmoi.hostname) }}
+# === Huawei Work Environment (MacBook only) ===
 export HARMONYOS_SDK_HOME="$HOME/HarmonyOS-SDK"
 export DEVECO_STUDIO_HOME="/Applications/DevEco-Studio.app"
 export PATH="$DEVECO_STUDIO_HOME/Contents/bin:$PATH"
@@ -78,7 +78,7 @@ alias lg='lazygit'
 alias vi='nvim'
 alias v='nvim'
 
-{{ if eq .chezmoi.hostname "macbook" }}
+{{ if or (eq .chezmoi.hostname "macbook") (contains "MacBook" .chezmoi.hostname) }}
 alias work='cd ~/Workspace/harmonyos-workspace'
 alias arkts='cd ~/Workspace/harmonyos-workspace && nvim .'
 {{ end }}

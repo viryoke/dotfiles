@@ -10,7 +10,15 @@ echo ""
 echo "--- Phase 0: Environment Detection ---"
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 ARCH="$(uname -m)"
-HOSTNAME="$(hostname)"
+RAW_HOSTNAME="$(hostname)"
+
+# Normalize hostname to match flake.nix homeConfigurations keys
+# "viryokes-MacBook-Air" / "MacBook-Pro" / etc → "macbook"
+if echo "$RAW_HOSTNAME" | grep -qi "macbook"; then
+  HOSTNAME="macbook"
+else
+  HOSTNAME="$RAW_HOSTNAME"
+fi
 echo "OS: $OS | Arch: $ARCH | Hostname: $HOSTNAME"
 
 if [ "$OS" = "linux" ] && [ -f /etc/os-release ]; then

@@ -4,7 +4,12 @@ set -euo pipefail
 echo "=== Deploying Nix home-manager ==="
 
 DOTFILES_DIR="{{ .chezmoi.sourceDir }}"
+# Normalize hostname to match flake.nix homeConfigurations keys
+{{ if or (eq .chezmoi.hostname "macbook") (contains "MacBook" .chezmoi.hostname) }}
+HOSTNAME="macbook"
+{{ else }}
 HOSTNAME="{{ .chezmoi.hostname }}"
+{{ end }}
 
 if command -v nix &>/dev/null; then
   cd "$DOTFILES_DIR"
