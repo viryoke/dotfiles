@@ -14,10 +14,17 @@ Cross-platform personal environment configuration using chezmoi + Nix home-manag
 ### CachyOS Linux
 
 ```bash
-# 1. 克隆仓库到统一目录
+# 1. 克隆仓库
 git clone https://github.com/viryoke/dotfiles.git ~/dotfiles
 
-# 2. 配置 chezmoi 指向本地仓库
+# 2. 安装 Nix（单用户模式，不创建 build users）
+sh <(curl -L https://nixos.org/nix/install) --no-daemon
+source ~/.nix-profile/etc/profile.d/nix.sh
+
+# 3. 安装 chezmoi
+sudo pacman -S --needed chezmoi
+
+# 4. 配置 chezmoi 指向本地仓库
 mkdir -p ~/.config/chezmoi
 cat > ~/.config/chezmoi/chezmoi.yaml << 'EOF'
 sourceDir: ~/dotfiles/home
@@ -28,8 +35,7 @@ data:
     email: <your-email>
 EOF
 
-# 3. 安装 chezmoi 并部署
-sudo pacman -S --needed chezmoi
+# 5. 部署
 chezmoi apply
 ```
 
@@ -43,10 +49,14 @@ xcode-select --install
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 brew install git chezmoi
 
-# 3. 克隆仓库到统一目录
+# 3. 克隆仓库
 git clone https://github.com/viryoke/dotfiles.git ~/dotfiles
 
-# 4. 配置 chezmoi 指向本地仓库
+# 4. 安装 Nix（单用户模式，不创建 build users）
+sh <(curl -L https://nixos.org/nix/install) --no-daemon
+source ~/.nix-profile/etc/profile.d/nix.sh
+
+# 5. 配置 chezmoi 指向本地仓库
 mkdir -p ~/.config/chezmoi
 cat > ~/.config/chezmoi/chezmoi.yaml << 'EOF'
 sourceDir: ~/dotfiles/home
@@ -57,7 +67,7 @@ data:
     email: <your-email>
 EOF
 
-# 5. 部署 dotfiles
+# 6. 部署
 chezmoi apply
 ```
 

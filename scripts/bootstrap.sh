@@ -49,8 +49,8 @@ elif [ "$OS" = "darwin" ]; then
 fi
 
 if ! command -v nix &>/dev/null; then
-  echo "Installing Nix..."
-  sh <(curl -L https://nixos.org/nix/install) --daemon
+  echo "Installing Nix (single-user)..."
+  sh <(curl -L https://nixos.org/nix/install) --no-daemon
   if [ -f /etc/profile.d/nix.sh ]; then
     . /etc/profile.d/nix.sh
   elif [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
