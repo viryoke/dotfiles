@@ -23,6 +23,18 @@ packages:
       - "htop"
       - "btop"
       - "tree"
+      # Wayland utilities
+      - "rofi-wayland"
+      - "cliphist"
+      - "grim"
+      - "slurp"
+      - "mako"
+      - "wlogout"
+      - "swww"
+      - "imagemagick"
+      - "papirus-icon-theme"
+      - "fcitx5-gtk"
+      - "fcitx5-chinese-addons"
     pacman_amd64:
       - "ghostty"
       - "ghostty-terminfo"
@@ -38,6 +50,7 @@ packages:
     aur:
       - "clash-verge-rev-bin"
       - "baidunetdisk-bin"
+      - "rofi-emoji"
   darwin:
     brews:
       - "git"
