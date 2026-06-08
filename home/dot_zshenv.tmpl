@@ -5,6 +5,10 @@ export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_CACHE_HOME="$HOME/.cache"
 export XDG_STATE_HOME="$HOME/.local/state"
 
+# npm global (user-local, nix store is read-only)
+export npm_config_prefix="$HOME/.npm-global"
+export PATH="$HOME/.npm-global/bin:$PATH"
+
 {{ if eq .chezmoi.os "darwin" }}
 export HOMEBREW_NO_AUTO_UPDATE=1
 {{ end }}
