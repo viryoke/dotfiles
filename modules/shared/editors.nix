@@ -12,7 +12,6 @@
       fd
       lazygit
       nodejs
-      python3
       tree-sitter
     ] ++ lib.optionals isLinux [
       wl-clipboard
