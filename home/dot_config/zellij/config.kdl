@@ -4,6 +4,7 @@ mouse_mode false
 on_force_close "detach"
 simplified_ui true
 disable_session_metadata true
+show_startup_tips false
 
 themes {
     gruvbox-material-dark {
