@@ -1,0 +1,26 @@
+# Nix
+result
+result-*
+
+# chezmoi
+home/.chezmoiscripts/*.sh
+
+# Secrets (never commit plaintext)
+secrets/*.age
+*.secret
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Temporary
+*.tmp
+*.bak
