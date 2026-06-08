@@ -11,7 +11,8 @@ layout {
         }
         pane size="20%" split_direction="horizontal" {
             pane size="50%" {
-                command "system-monitor"
+                command "bash"
+                args "-c" "$HOME/.local/bin/system-monitor"
             }
             pane size="50%"
         }
