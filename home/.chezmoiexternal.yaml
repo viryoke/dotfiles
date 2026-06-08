@@ -1,2 +1,12 @@
-# External dependencies managed by lazy.nvim at runtime
-# No chezmoi externals needed - LazyVim bootstraps itself via init.lua
+# chezmoi external dependencies
+
+# rime-ice: Chinese input method data (schemas, dictionaries, Lua plugins)
+# Cloned to ~/.local/share/fcitx5/rime-ice/ — rime-build.sh symlinks to rime/
+".local/share/fcitx5/rime-ice":
+  type: "git-repo"
+  url: "https://github.com/iDvel/rime-ice.git"
+  refreshPeriod: "720h"
+  clone:
+    args: ["--depth", "1"]
+  pull:
+    args: ["--ff-only"]
