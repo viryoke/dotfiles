@@ -53,6 +53,20 @@
             hostname = "macbook";
           };
         };
+
+        "viryoke@arch-test" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.aarch64-linux;
+          modules = [
+            ./hosts/arch-test
+            agenix.homeManagerModules.default
+          ];
+          extraSpecialArgs = {
+            inherit self;
+            isLinux = true;
+            isDarwin = false;
+            hostname = "arch-test";
+          };
+        };
       };
     };
 }
