@@ -1,0 +1,115 @@
+#!/bin/bash
+# System monitor for zellij pane - Gruvbox Material Dark colors
+# Managed by chezmoi
+
+RED='\033[38;5;203m'
+GREEN='\033[38;5;142m'
+YELLOW='\033[38;5;214m'
+BLUE='\033[38;5;109m'
+CYAN='\033[38;5;108m'
+ORANGE='\033[38;5;208m'
+BOLD='\033[1m'
+DIM='\033[2m'
+RESET='\033[0m'
+
+get_cpu_temp() {
+  local temp=""
+  if [ -f /sys/class/thermal/thermal_zone0/temp ]; then
+    local raw=$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null)
+    temp=$(echo "scale=1; $raw/1000" | bc 2>/dev/null || echo "$((raw/1000))")
+  elif command -v sensors &>/dev/null; then
+    temp=$(sensors 2>/dev/null | grep -i 'tctl\|package id 0\|cpu' | head -1 | grep -oP '\+\K[0-9.]+')
+  fi
+  echo "${temp:-N/A}"
+}
+
+get_gpu_temp() {
+  local temp=""
+  if command -v nvidia-smi &>/dev/null; then
+    temp=$(nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits 2>/dev/null)
+  fi
+  echo "${temp:-N/A}"
+}
+
+get_wifi() {
+  local ssid="" quality=""
+  if command -v nmcli &>/dev/null; then
+    ssid=$(nmcli -t -f active,ssid dev wifi 2>/dev/null | grep '^yes' | head -1 | cut -d: -f2)
+    quality=$(nmcli -t -f active,signal dev wifi 2>/dev/null | grep '^yes' | head -1 | cut -d: -f2)
+  elif command -v iwgetid &>/dev/null; then
+    ssid=$(iwgetid -r 2>/dev/null)
+  elif [ -f /proc/net/wireless ]; then
+    quality=$(awk 'NR==3 {printf "%.0f", $3*100/70}' /proc/net/wireless 2>/dev/null)
+  fi
+  if [ -n "$ssid" ]; then
+    echo "${ssid} ${quality:+(${quality}%)}"
+  else
+    echo "N/A"
+  fi
+}
+
+get_cpu_usage() {
+  top -bn1 2>/dev/null | grep "Cpu(s)" | awk '{printf "%.1f", $2+$4}' || \
+  mpstat 1 1 2>/dev/null | tail -1 | awk '{printf "%.1f", 100-$NF}' || \
+  echo "N/A"
+}
+
+get_mem_usage() {
+  if [ -f /proc/meminfo ]; then
+    awk '/MemTotal/{t=$2} /MemAvailable/{a=$2} END{printf "%.1f/%.1fG (%.0f%%)", (t-a)/1048576, t/1048576, (t-a)*100/t}' /proc/meminfo
+  elif command -v vm_stat &>/dev/null; then
+    vm_stat 2>/dev/null | awk '
+      /Pages active/{a=$3}
+      /Pages wired/{w=$3}
+      /Pages free/{f=$3}
+      END{
+        used=(a+w)*4096/1073741824;
+        total=(a+w+f)*4096/1073741824;
+        printf "%.1f/%.1fG", used, total
+      }'
+  else
+    echo "N/A"
+  fi
+}
+
+get_uptime_short() {
+  if [ -f /proc/uptime ]; then
+    local secs=$(awk '{printf "%.0f", $1}' /proc/uptime)
+    local d=$((secs/86400)) h=$((secs%86400/3600)) m=$((secs%3600/60))
+    [ $d -gt 0 ] && echo "${d}d${h}h" || echo "${h}h${m}m"
+  else
+    uptime 2>/dev/null | sed 's/.*up //' | sed 's/,.*//'
+  fi
+}
+
+clear
+while true; do
+  cpu_temp=$(get_cpu_temp)
+  gpu_temp=$(get_gpu_temp)
+  wifi=$(get_wifi)
+  cpu_usage=$(get_cpu_usage)
+  mem=$(get_mem_usage)
+  up=$(get_uptime_short)
+  now=$(date '+%H:%M:%S')
+
+  tput cup 0 0
+
+  echo -e "${BOLD}${ORANGE}╭─ System Monitor ─────────────╮${RESET}"
+  echo -e "${ORANGE}│${RESET}                              ${ORANGE}│${RESET}"
+  echo -e "${ORANGE}│${RESET}  ${BOLD}Time${RESET}    ${CYAN}${now}${RESET}          ${ORANGE}│${RESET}"
+  echo -e "${ORANGE}│${RESET}  ${BOLD}Uptime${RESET}  ${CYAN}${up}${RESET}              ${ORANGE}│${RESET}"
+  echo -e "${ORANGE}│${RESET}                              ${ORANGE}│${RESET}"
+  echo -e "${ORANGE}│${RESET}  ${BOLD}CPU${RESET}     ${GREEN}${cpu_usage}%${RESET}              ${ORANGE}│${RESET}"
+  echo -e "${ORANGE}│${RESET}  ${BOLD}CPU °${RESET}   ${YELLOW}${cpu_temp}°C${RESET}             ${ORANGE}│${RESET}"
+  echo -e "${ORANGE}│${RESET}  ${BOLD}GPU °${RESET}   ${YELLOW}${gpu_temp}°C${RESET}             ${ORANGE}│${RESET}"
+  echo -e "${ORANGE}│${RESET}  ${BOLD}Memory${RESET}  ${BLUE}${mem}${RESET}   ${ORANGE}│${RESET}"
+  echo -e "${ORANGE}│${RESET}                              ${ORANGE}│${RESET}"
+  echo -e "${ORANGE}│${RESET}  ${BOLD}WiFi${RESET}    ${GREEN}${wifi}${RESET}  ${ORANGE}│${RESET}"
+  echo -e "${ORANGE}│${RESET}                              ${ORANGE}│${RESET}"
+  echo -e "${BOLD}${ORANGE}╰──────────────────────────────╯${RESET}"
+
+  tput cup 16 0
+  tput ed
+
+  sleep 3
+done

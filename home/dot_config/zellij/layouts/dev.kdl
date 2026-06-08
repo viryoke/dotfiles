@@ -10,8 +10,11 @@ layout {
             command "nvim"
         }
         pane size="20%" split_direction="horizontal" {
-            pane
-            pane
+            pane size="50%" {
+                command "bash"
+                args "$HOME/.local/bin/system-monitor"
+            }
+            pane size="50%"
         }
     }
     pane size=2 borderless=true {

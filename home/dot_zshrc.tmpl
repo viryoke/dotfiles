@@ -62,3 +62,10 @@ alias obsidian-pull='cd ~/Documents/ObsidianVault && git pull'
 
 # === Tool initialization ===
 eval "$(zoxide init zsh)"
+
+# === Auto-launch zellij ===
+if [ -z "$ZELLIJ" ] && [ -z "$TMUX" ] && [ -z "$ZELLIJ_NO_AUTO" ]; then
+  if command -v zellij &>/dev/null; then
+    exec zellij attach -c main
+  fi
+fi

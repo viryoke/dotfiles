@@ -61,5 +61,8 @@
     wget
     unzip
     delta
+    bc
+    claude-code
+    opencode
   ];
 }
