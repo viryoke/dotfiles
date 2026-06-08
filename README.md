@@ -14,7 +14,7 @@ Cross-platform personal environment configuration using chezmoi + Nix home-manag
 **一键安装（CachyOS 和 macOS 通用）：**
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/viryoke/dotfiles/main/scripts/bootstrap.sh)
+curl -fsSL https://raw.githubusercontent.com/viryoke/dotfiles/main/scripts/bootstrap.sh | bash
 ```
 
 脚本会自动：
