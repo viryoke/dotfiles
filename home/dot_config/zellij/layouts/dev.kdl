@@ -5,14 +5,17 @@ layout {
     pane split_direction="vertical" {
         pane size="20%" {
             command "yazi"
+            start_suspended false
         }
         pane size="60%" {
             command "nvim"
+            start_suspended false
         }
         pane size="20%" split_direction="horizontal" {
             pane size="50%" {
                 command "bash"
                 args "-c" "$HOME/.local/bin/system-monitor"
+                start_suspended false
             }
             pane size="50%"
         }
