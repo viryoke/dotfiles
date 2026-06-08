@@ -1,0 +1,17 @@
+#!/bin/bash
+set -euo pipefail
+
+echo "=== Deploying Nix home-manager ==="
+
+DOTFILES_DIR="{{ .chezmoi.sourceDir }}"
+HOSTNAME="{{ .chezmoi.hostname }}"
+
+if command -v nix &>/dev/null; then
+  cd "$DOTFILES_DIR"
+  echo "Running home-manager switch for viryoke@${HOSTNAME}..."
+  nix run home-manager -- switch --flake ".#viryoke@${HOSTNAME}" --impure
+  echo "=== home-manager deployment complete ==="
+else
+  echo "WARNING: Nix not found. Skipping home-manager deployment."
+  echo "Install Nix first: sh <(curl -L https://nixos.org/nix/install) --daemon"
+fi

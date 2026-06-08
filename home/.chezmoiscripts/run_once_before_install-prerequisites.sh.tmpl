@@ -1,0 +1,38 @@
+#!/bin/bash
+set -euo pipefail
+
+echo "=== Phase 0: Environment Pre-check ==="
+echo "OS: {{ .chezmoi.os }}"
+echo "Arch: {{ .chezmoi.arch }}"
+{{ if eq .chezmoi.os "linux" }}
+echo "Distro: {{ .chezmoi.osRelease.id }}"
+{{ end }}
+echo "Hostname: {{ .chezmoi.hostname }}"
+
+{{ if eq .chezmoi.os "linux" }}
+if ! command -v nix &>/dev/null; then
+  echo "Installing Nix..."
+  sh <(curl -L https://nixos.org/nix/install) --daemon
+  . /etc/profile.d/nix.sh
+fi
+{{ else if eq .chezmoi.os "darwin" }}
+if ! xcode-select -p &>/dev/null; then
+  echo "Installing Xcode CLI tools..."
+  xcode-select --install
+  echo "Please complete Xcode CLI tools installation and re-run."
+  exit 1
+fi
+
+if ! command -v brew &>/dev/null; then
+  echo "Installing Homebrew..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+if ! command -v nix &>/dev/null; then
+  echo "Installing Nix..."
+  sh <(curl -L https://nixos.org/nix/install) --daemon
+  . /etc/profile.d/nix.sh
+fi
+{{ end }}
+
+echo "=== Prerequisites check complete ==="
