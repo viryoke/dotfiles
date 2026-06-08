@@ -15,13 +15,13 @@ Cross-platform personal environment configuration using chezmoi + Nix home-manag
 
 ```bash
 # 1. 克隆仓库到统一目录
-git clone https://github.com/viryoke/dotfiles.git ~/Workspace/dotfiles
+git clone https://github.com/viryoke/dotfiles.git ~/dotfiles
 
 # 2. 配置 chezmoi 指向本地仓库
 mkdir -p ~/.config/chezmoi
 cat > ~/.config/chezmoi/chezmoi.yaml << 'EOF'
-sourceDir: ~/Workspace/dotfiles/home
-workingTree: ~/Workspace/dotfiles
+sourceDir: ~/dotfiles/home
+workingTree: ~/dotfiles
 data:
   git:
     name: <your-name>
@@ -44,13 +44,13 @@ xcode-select --install
 brew install git chezmoi
 
 # 3. 克隆仓库到统一目录
-git clone https://github.com/viryoke/dotfiles.git ~/Workspace/dotfiles
+git clone https://github.com/viryoke/dotfiles.git ~/dotfiles
 
 # 4. 配置 chezmoi 指向本地仓库
 mkdir -p ~/.config/chezmoi
 cat > ~/.config/chezmoi/chezmoi.yaml << 'EOF'
-sourceDir: ~/Workspace/dotfiles/home
-workingTree: ~/Workspace/dotfiles
+sourceDir: ~/dotfiles/home
+workingTree: ~/dotfiles
 data:
   git:
     name: <your-name>
@@ -66,7 +66,7 @@ chezmoi apply
 ## Architecture
 
 ```
-~/Workspace/dotfiles/              ← Git 仓库
+~/dotfiles/              ← Git 仓库
 ├── flake.nix                      ← Nix flake 入口 (home-manager + nix-darwin)
 ├── hosts/                         ← 各主机 home-manager 配置
 │   ├── cachyos-desktop/
@@ -107,7 +107,7 @@ chezmoi diff
 chezmoi apply
 
 # 提交
-cd ~/Workspace/dotfiles && git add -A && git commit -m "update: ..."
+cd ~/dotfiles && git add -A && git commit -m "update: ..."
 ```
 
 ## Theme
