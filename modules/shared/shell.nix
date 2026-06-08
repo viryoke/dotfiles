@@ -1,57 +1,21 @@
-{ pkgs, lib, ... }: {
-  programs.zsh = {
-    enable = true;
-    enableCompletion = true;
-    autosuggestion.enable = true;
-    syntaxHighlighting.enable = true;
-    history = {
-      size = 50000;
-      save = 50000;
-      path = "$HOME/.zsh_history";
-      ignoreDups = true;
-      share = true;
-    };
-  };
-
-  programs.starship = {
-    enable = true;
-    enableZshIntegration = true;
-  };
-
-  programs.zoxide = {
-    enable = true;
-    enableZshIntegration = true;
-  };
-
-  programs.fzf = {
-    enable = true;
-    enableZshIntegration = true;
-    defaultOptions = [
-      "--height 40%"
-      "--layout=reverse"
-      "--border"
-      "--color=bg+:#3c3836,bg:#282828,spinner:#d8a657,hl:#7daea3"
-      "--color=fg:#ebdbb2,header:#7daea3,info:#d8a657,pointer:#d8a657"
-      "--color=marker:#d8a657,fg+:#ebdbb2,prompt:#d8a657,hl+:#7daea3"
-    ];
-  };
-
-  programs.eza = {
-    enable = true;
-    enableZshIntegration = true;
-    icons = "auto";
-    git = true;
-  };
-
-  programs.bat = {
-    enable = true;
-    config = {
-      theme = "gruvbox-dark";
-      pager = "less -FR";
-    };
-  };
+{ pkgs, lib, isLinux, isDarwin, ... }: {
+  # NOTE: zsh, starship, zoxide, fzf, eza, bat are configured entirely via chezmoi
+  # (home/dot_zshrc.tmpl). We only install packages here — no programs.*.enable
+  # to avoid home-manager generating a conflicting ~/.zshrc.
 
   home.packages = with pkgs; [
+    # Zsh plugins (sourced manually in .zshrc)
+    zsh-autosuggestions
+    zsh-syntax-highlighting
+
+    # CLI tools managed by chezmoi .zshrc
+    starship
+    zoxide
+    fzf
+    eza
+    bat
+
+    # Other packages
     lazygit
     htop
     btop

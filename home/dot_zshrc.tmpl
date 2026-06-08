@@ -1,5 +1,15 @@
 # ~/.zshrc - Managed by chezmoi
 
+# === History ===
+HISTSIZE=50000
+SAVEHIST=50000
+HISTFILE=~/.zsh_history
+setopt INC_APPEND_HISTORY
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_SPACE
+setopt EXTENDED_HISTORY
+setopt SHARE_HISTORY
+
 # === Cross-platform PATH ===
 {{ if eq .chezmoi.os "linux" }}
 export PATH="$HOME/.nix-profile/bin:$HOME/.local/bin:/usr/local/bin:$PATH"
@@ -31,15 +41,33 @@ export PATH="$HOME/.cargo/bin:$PATH"
 # === Python ===
 export UV_CACHE_DIR="$HOME/.cache/uv"
 
-# === npm global (user-local, nix store is read-only) ===
-export npm_config_prefix="$HOME/.npm-global"
-export PATH="$HOME/.npm-global/bin:$PATH"
-
 {{ if eq .chezmoi.hostname "macbook" }}
 # === Huawei Work Environment (macBook only) ===
 export HARMONYOS_SDK_HOME="$HOME/HarmonyOS-SDK"
 export DEVECO_STUDIO_HOME="/Applications/DevEco-Studio.app"
 export PATH="$DEVECO_STUDIO_HOME/Contents/bin:$PATH"
+{{ end }}
+
+# === Completion ===
+autoload -Uz compinit
+compinit -C
+
+# === Zsh plugins (installed via Nix home-manager) ===
+{{ if eq .chezmoi.os "linux" }}
+source "$HOME/.nix-profile/share/zsh-autosuggestions/zsh-autosuggestions.zsh" 2>/dev/null
+source "$HOME/.nix-profile/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" 2>/dev/null
+{{ else if eq .chezmoi.os "darwin" }}
+# macOS: try Nix profile first, then Homebrew
+if [ -f "$HOME/.nix-profile/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]; then
+  source "$HOME/.nix-profile/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+elif [ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]; then
+  source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+fi
+if [ -f "$HOME/.nix-profile/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]; then
+  source "$HOME/.nix-profile/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+elif [ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
+  source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
 {{ end }}
 
 # === Aliases ===
@@ -82,7 +110,15 @@ alias wallpaper='~/.config/rofi-wayland/scripts/wallpaper.sh'
 {{ end }}
 
 # === Tool initialization ===
+eval "$(starship init zsh)"
 eval "$(zoxide init zsh)"
+source <(fzf --zsh)
+
+# === Key bindings ===
+bindkey -e
+bindkey '^R' fzf-history-widget
+bindkey '^T' fzf-file-widget
+bindkey '^[c' fzf-cd-widget
 
 # === Auto-launch zellij ===
 if [ -z "$ZELLIJ" ] && [ -z "$TMUX" ] && [ -z "$ZELLIJ_NO_AUTO" ] && [ -t 0 ] && [ -t 1 ]; then

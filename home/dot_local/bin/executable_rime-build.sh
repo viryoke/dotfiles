@@ -50,6 +50,6 @@ if [ -d "$SYS_DATA_DIR" ]; then
     done
 fi
 
-# Run rime_deployer to compile schemas
-rime_deployer --build "$RIME_DIR" "$BUILD_DIR" 2>/dev/null
+# Run rime_deployer to compile schemas (log errors for debugging)
+rime_deployer --build "$RIME_DIR" "$BUILD_DIR" 2>&1 || echo "WARNING: rime_deployer build failed"
 echo "Rime build complete"

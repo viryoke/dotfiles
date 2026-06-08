@@ -34,9 +34,10 @@ selected=$(echo "$wallpapers" | while read -r f; do basename "$f"; done | \
     -theme-str "listview { lines: 15; }")
 
 if [ -n "$selected" ]; then
-    wallpaper_path=$(echo "$wallpapers" | grep "/$selected$")
+    # Reconstruct path directly (grep with filenames containing regex chars is fragile)
+    wallpaper_path="$WALLPAPER_DIR/$selected"
 
-    if [ -n "$wallpaper_path" ]; then
+    if [ -f "$wallpaper_path" ]; then
         # Apply wallpaper with swww transition
         swww img "$wallpaper_path" \
             --transition-type random \

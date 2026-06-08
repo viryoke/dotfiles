@@ -76,7 +76,11 @@ if command -v zsh &>/dev/null; then
     fi
   fi
 
-  CURRENT_SHELL=$(getent passwd "$USER" 2>/dev/null | cut -d: -f7 || dscl . -read /Users/"$USER" UserShell 2>/dev/null | awk '{print $2}')
+  if [ "$OS" = "linux" ]; then
+    CURRENT_SHELL=$(getent passwd "$USER" 2>/dev/null | cut -d: -f7)
+  else
+    CURRENT_SHELL=$(dscl . -read /Users/"$USER" UserShell 2>/dev/null | awk '{print $2}')
+  fi
   if [ "$CURRENT_SHELL" != "$ZSH_PATH" ]; then
     echo "Setting zsh as default shell..."
     chsh -s "$ZSH_PATH" || echo "WARNING: Failed to set zsh as default shell. Run: sudo chsh -s $ZSH_PATH $USER"
