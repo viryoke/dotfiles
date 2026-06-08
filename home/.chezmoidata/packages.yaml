@@ -3,13 +3,10 @@ packages:
     pacman:
       - "git"
       - "neovim"
-      - "ghostty"
       - "flatpak"
-      - "fcitx5-im"
+      - "fcitx5"
       - "fcitx5-rime"
       - "fcitx5-configtool"
-      - "nvidia-dkms"
-      - "cuda"
       - "lazygit"
       - "ripgrep"
       - "fd"
@@ -26,6 +23,10 @@ packages:
       - "htop"
       - "btop"
       - "tree"
+    pacman_amd64:
+      - "ghostty"
+      - "nvidia-dkms"
+      - "cuda"
     flatpak:
       - "org.mozilla.firefox"
       - "org.telegram.desktop"
