@@ -79,6 +79,17 @@ check "git user.email" "git config user.email"
 warn "SSH key exists" "test -f ~/.ssh/id_ed25519"
 
 echo ""
+echo "--- Wayland Utilities ---"
+warn "rofi-wayland" "command -v rofi"
+warn "cliphist" "command -v cliphist"
+warn "grim" "command -v grim"
+warn "slurp" "command -v slurp"
+warn "mako" "command -v mako"
+warn "wlogout" "command -v wlogout"
+warn "swww" "command -v swww"
+warn "fcitx5" "command -v fcitx5"
+
+echo ""
 echo "--- chezmoi Status ---"
 check "chezmoi source dir" "test -d ~/.local/share/chezmoi"
 if command -v chezmoi &>/dev/null; then
