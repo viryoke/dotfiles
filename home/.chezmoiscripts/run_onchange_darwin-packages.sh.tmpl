@@ -12,7 +12,7 @@ if command -v brew &>/dev/null; then
 
   echo "Installing brew casks..."
   {{ range .packages.darwin.casks -}}
-  brew install --cask {{ . | quote }}
+  brew install --cask {{ . | quote }} || echo "WARN: {{ . }} may already be installed, skipping"
   {{ end }}
 fi
 
