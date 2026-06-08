@@ -1,0 +1,11 @@
+# LazyVim starter configuration
+".config/nvim/lua/plugins/lazyvim-init.lua":
+  type: "file"
+  url: "https://raw.githubusercontent.com/LazyVim/LazyVim/stable/lua/lazyvim/config/init.lua"
+  refreshPeriod: "168h"
+
+# Gruvbox Material palette reference
+".chezmoitemplates/gruvbox-material-palette.tmpl":
+  type: "file"
+  url: "https://raw.githubusercontent.com/sainnhe/gruvbox-material/master/palette.md"
+  refreshPeriod: "720h"

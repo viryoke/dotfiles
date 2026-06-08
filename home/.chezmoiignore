@@ -1,0 +1,20 @@
+README.md
+LICENSE
+flake.nix
+flake.lock
+hosts/
+modules/
+overlays/
+pkgs/
+secrets/
+scripts/
+docs/
+
+{{ if ne .chezmoi.os "darwin" }}
+dot_config/karabiner/
+{{ end }}
+
+{{ if ne .chezmoi.os "linux" }}
+dot_config/waybar/
+dot_config/swaylock/
+{{ end }}
