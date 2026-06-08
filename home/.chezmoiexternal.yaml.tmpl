@@ -1,7 +1,8 @@
 # chezmoi external dependencies
-
+{{ if eq .chezmoi.os "linux" }}
 # rime-ice: Chinese input method data (schemas, dictionaries, Lua plugins)
 # Cloned to ~/.local/share/fcitx5/rime-ice/ — rime-build.sh symlinks to rime/
+# Linux only — macOS does not need Rime input method
 ".local/share/fcitx5/rime-ice":
   type: "git-repo"
   url: "https://github.com/iDvel/rime-ice.git"
@@ -10,3 +11,4 @@
     args: ["--depth", "1"]
   pull:
     args: ["--ff-only"]
+{{ end }}

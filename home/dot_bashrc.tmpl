@@ -2,7 +2,11 @@
 # Auto-switch to zsh if available (for orb/ssh sessions that default to bash)
 
 export LANG=en_US.UTF-8
+
+{{ if eq .chezmoi.os "darwin" }}
+# Fix locale on macOS (OrbStack may inject broken LC_ALL)
 export LC_ALL=en_US.UTF-8
+{{ end }}
 
 # TERM fallback: if current terminal has no terminfo entry, fall back
 if [ -n "$TERM" ] && ! infocmp "$TERM" &>/dev/null 2>&1; then

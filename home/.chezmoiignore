@@ -11,11 +11,12 @@ scripts/
 docs/
 
 {{ if ne .chezmoi.os "linux" }}
-dot_config/waybar/
-dot_config/swaylock/
-dot_config/rofi-wayland/
-dot_config/mako/
-dot_config/fcitx5/
-dot_local/share/fcitx5/
-dot_local/bin/executable_rime-build.sh
+.config/waybar
+.config/swaylock
+.config/rofi-wayland
+.config/mako
+.config/fcitx5
+.local/share/fcitx5
+.local/bin/rime-build.sh
+.chezmoiscripts/rime-build.sh
 {{ end }}
