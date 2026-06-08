@@ -1,0 +1,27 @@
+font-family = JetBrainsMono Nerd Font
+font-size = 14
+font-thicken = true
+
+theme = GruvboxDark
+
+window-padding-x = 8
+window-padding-y = 4
+window-decoration = true
+background-opacity = 0.95
+
+cursor-style = block
+cursor-style-blink = true
+
+shell-integration = zsh
+
+keybind = ctrl+shift+t=new_tab
+keybind = ctrl+shift+w=close_surface
+keybind = ctrl+shift+enter=new_split:right
+keybind = ctrl+shift+o=new_split:down
+keybind = ctrl+shift+h=goto_split:left
+keybind = ctrl+shift+l=goto_split:right
+keybind = ctrl+shift+k=goto_split:top
+keybind = ctrl+shift+j=goto_split:bottom
+keybind = ctrl+equal=increase_font_size:1
+keybind = ctrl+minus=decrease_font_size:1
+keybind = ctrl+zero=reset_font_size
