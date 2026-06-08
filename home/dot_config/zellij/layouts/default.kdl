@@ -4,10 +4,8 @@ layout {
     }
     pane split_direction="vertical" {
         pane size="80%"
-        pane size="20%" {
-            command "bash"
+        pane size="20%" command="bash" start_suspended=false {
             args "-c" "$HOME/.local/bin/system-monitor"
-            start_suspended false
         }
     }
     pane size=2 borderless=true {

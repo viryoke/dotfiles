@@ -3,19 +3,11 @@ layout {
         plugin location="zellij:tab-bar"
     }
     pane split_direction="vertical" {
-        pane size="20%" {
-            command "yazi"
-            start_suspended false
-        }
-        pane size="60%" {
-            command "nvim"
-            start_suspended false
-        }
+        pane size="20%" command="yazi" start_suspended=false
+        pane size="60%" command="nvim" start_suspended=false
         pane size="20%" split_direction="horizontal" {
-            pane size="50%" {
-                command "bash"
+            pane size="50%" command="bash" start_suspended=false {
                 args "-c" "$HOME/.local/bin/system-monitor"
-                start_suspended false
             }
             pane size="50%"
         }
