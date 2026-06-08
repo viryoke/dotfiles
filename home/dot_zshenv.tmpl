@@ -16,7 +16,7 @@ fi
 
 # npm global (user-local, nix store is read-only)
 export npm_config_prefix="$HOME/.npm-global"
-export PATH="$HOME/.npm-global/bin:$PATH"
+export PATH="$HOME/.npm-global/bin:$HOME/.local/bin:$PATH"
 
 {{ if eq .chezmoi.os "darwin" }}
 export HOMEBREW_NO_AUTO_UPDATE=1
