@@ -1,0 +1,144 @@
+# Starship prompt - Gruvbox Material Dark
+
+format = """
+[░▒▓](#a89984)\
+[  ](bg:#a89984 fg:#282828)\
+$os\
+$username\
+[](fg:#a89984 bg:#665c54)\
+$directory\
+[](fg:#665c54 bg:#458588)\
+$git_branch\
+$git_status\
+[](fg:#458588 bg:#b57614)\
+$c\
+$rust\
+$golang\
+$java\
+$python\
+$nodejs\
+$lua\
+[](fg:#b57614 bg:#79740e)\
+$docker_context\
+$conda\
+[](fg:#79740e bg:#427b58)\
+$nix_shell\
+[](fg:#427b58 bg:#d65d0e)\
+$time\
+[ ](fg:#d65d0e)\
+$line_break$character"""
+
+palette = 'gruvbox_dark'
+
+[palettes.gruvbox_dark]
+dark0_hard = '#1d2021'
+dark0 = '#282828'
+dark0_soft = '#32302f'
+dark1 = '#3c3836'
+dark2 = '#504945'
+dark3 = '#665c54'
+dark4 = '#7c6f64'
+light0_hard = '#f9f5d7'
+light0 = '#fbf1c7'
+light0_soft = '#f2e5bc'
+light1 = '#ebdbb2'
+light2 = '#d5c4a1'
+light3 = '#bdae93'
+light4 = '#a89984'
+bright_red = '#fb4934'
+bright_green = '#b8bb26'
+bright_yellow = '#fabd2f'
+bright_blue = '#83a598'
+bright_purple = '#d3869b'
+bright_aqua = '#8ec07c'
+bright_orange = '#fe8019'
+
+[os]
+disabled = false
+style = "bg:#a89984 fg:#282828"
+
+[os.symbols]
+Linux = " "
+Macos = " "
+Windows = " "
+
+[username]
+show_always = true
+style_user = "bg:#a89984 fg:#282828"
+style_root = "bg:#a89984 fg:#282828"
+format = '[ $user ]($style)'
+
+[directory]
+style = "fg:#ebdbb2 bg:#665c54"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[git_branch]
+symbol = ""
+style = "fg:#ebdbb2 bg:#458588"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "fg:#ebdbb2 bg:#458588"
+format = '[$all_status$ahead_behind ]($style)'
+
+[python]
+symbol = ""
+style = "fg:#282828 bg:#b57614"
+format = '[ $symbol ($version) ]($style)'
+
+[golang]
+symbol = ""
+style = "fg:#282828 bg:#b57614"
+format = '[ $symbol ($version) ]($style)'
+
+[rust]
+symbol = ""
+style = "fg:#282828 bg:#b57614"
+format = '[ $symbol ($version) ]($style)'
+
+[java]
+symbol = ""
+style = "fg:#282828 bg:#b57614"
+format = '[ $symbol ($version) ]($style)'
+
+[nodejs]
+symbol = ""
+style = "fg:#282828 bg:#b57614"
+format = '[ $symbol ($version) ]($style)'
+
+[c]
+symbol = ""
+style = "fg:#282828 bg:#b57614"
+format = '[ $symbol ($version) ]($style)'
+
+[lua]
+symbol = ""
+style = "fg:#282828 bg:#b57614"
+format = '[ $symbol ($version) ]($style)'
+
+[docker_context]
+symbol = ""
+style = "fg:#282828 bg:#79740e"
+format = '[ $symbol $context ]($style)'
+
+[conda]
+style = "fg:#282828 bg:#79740e"
+format = '[ $symbol $environment ]($style)'
+
+[nix_shell]
+symbol = ""
+style = "fg:#ebdbb2 bg:#427b58"
+format = '[ $symbol $name ]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "fg:#282828 bg:#d65d0e"
+format = '[  $time ]($style)'
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold green)"

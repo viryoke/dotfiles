@@ -1,0 +1,64 @@
+# ~/.zshrc - Managed by chezmoi
+
+# === Cross-platform PATH ===
+{{ if eq .chezmoi.os "linux" }}
+export PATH="$HOME/.nix-profile/bin:$HOME/.local/bin:/usr/local/bin:$PATH"
+{{ else if eq .chezmoi.os "darwin" }}
+export PATH="$HOME/.nix-profile/bin:/opt/homebrew/bin:$HOME/.local/bin:$PATH"
+{{ end }}
+
+# === Nix environment ===
+if [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
+  . "$HOME/.nix-profile/etc/profile.d/nix.sh"
+fi
+
+# === Locale ===
+export LANG=en_US.UTF-8
+export LC_CTYPE=zh_CN.UTF-8
+
+# === Editor ===
+export EDITOR=nvim
+export VISUAL=nvim
+
+# === Go ===
+export GOPATH="$HOME/go"
+export GOBIN="$GOPATH/bin"
+export PATH="$GOBIN:$PATH"
+
+# === Rust ===
+export PATH="$HOME/.cargo/bin:$PATH"
+
+# === Python ===
+export UV_CACHE_DIR="$HOME/.cache/uv"
+
+{{ if eq .chezmoi.hostname "macbook" }}
+# === Huawei Work Environment (macBook only) ===
+export HARMONYOS_SDK_HOME="$HOME/HarmonyOS-SDK"
+export DEVECO_STUDIO_HOME="/Applications/DevEco-Studio.app"
+export PATH="$DEVECO_STUDIO_HOME/Contents/bin:$PATH"
+{{ end }}
+
+# === Aliases ===
+alias ll='eza -la --icons --git'
+alias la='eza -a --icons'
+alias lt='eza --tree --icons --level=2'
+alias lg='lazygit'
+alias vi='nvim'
+alias v='nvim'
+
+{{ if eq .chezmoi.hostname "macbook" }}
+alias work='cd ~/Workspace/harmonyos-workspace'
+alias arkts='cd ~/Workspace/harmonyos-workspace && nvim .'
+{{ end }}
+
+alias exam-study='cd ~/Documents/exam-prep && nvim .'
+alias essay-practice='cd ~/Documents/exam-prep/essays && nvim'
+alias ai-lab='cd ~/Workspace/ai-learning && pixi shell'
+alias jupyter-lab='jupyter lab --notebook-dir=~/Workspace/ai-learning'
+alias hermes='cd ~/Workspace/hermes-agent && uv run python main.py'
+alias hermes-dev='cd ~/Workspace/hermes-agent && uv run python main.py --dev'
+alias obsidian-sync='cd ~/Documents/ObsidianVault && git add -A && git commit -m "sync: $(date +%Y-%m-%d)" && git push'
+alias obsidian-pull='cd ~/Documents/ObsidianVault && git pull'
+
+# === Tool initialization ===
+eval "$(zoxide init zsh)"

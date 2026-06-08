@@ -1,0 +1,10 @@
+# ~/.zshenv - Managed by chezmoi
+
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_STATE_HOME="$HOME/.local/state"
+
+{{ if eq .chezmoi.os "darwin" }}
+export HOMEBREW_NO_AUTO_UPDATE=1
+{{ end }}
