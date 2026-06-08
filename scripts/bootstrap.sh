@@ -1,19 +1,21 @@
 #!/bin/bash
 set -euo pipefail
 
-DOTFILES_REPO="viryoke/dotfiles"
-DOTFILES_DIR="${HOME}/.local/share/chezmoi"
+DOTFILES_REPO="https://github.com/viryoke/dotfiles.git"
+DOTFILES_DIR="${HOME}/dotfiles"
 
-echo "=== viryoke/dotfiles Bootstrap ==="
+echo ""
+echo "╔══════════════════════════════════════════╗"
+echo "║     viryoke/dotfiles Bootstrap           ║"
+echo "╚══════════════════════════════════════════╝"
 echo ""
 
+# --- Phase 0: Environment Detection ---
 echo "--- Phase 0: Environment Detection ---"
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 ARCH="$(uname -m)"
 RAW_HOSTNAME="$(hostname)"
 
-# Normalize hostname to match flake.nix homeConfigurations keys
-# "viryokes-MacBook-Air" / "MacBook-Pro" / etc → "macbook"
 if echo "$RAW_HOSTNAME" | grep -qi "macbook"; then
   HOSTNAME="macbook"
 else
@@ -25,9 +27,10 @@ if [ "$OS" = "linux" ] && [ -f /etc/os-release ]; then
   DISTRO=$(. /etc/os-release && echo "$ID")
   echo "Distro: $DISTRO"
 fi
-
 echo ""
-echo "--- Phase 1: Installing Minimal Dependencies ---"
+
+# --- Phase 1: Install Dependencies ---
+echo "--- Phase 1: Installing Dependencies ---"
 if [ "$OS" = "linux" ]; then
   if command -v pacman &>/dev/null; then
     sudo pacman -S --needed --noconfirm git chezmoi
@@ -38,48 +41,100 @@ if [ "$OS" = "linux" ]; then
 elif [ "$OS" = "darwin" ]; then
   if ! xcode-select -p &>/dev/null; then
     xcode-select --install
-    echo "Complete Xcode CLI tools installation and re-run."
+    echo "Complete Xcode CLI tools installation and re-run this script."
     exit 1
   fi
   if ! command -v brew &>/dev/null; then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     eval "$(/opt/homebrew/bin/brew shellenv)"
   fi
-  brew install chezmoi
+  brew install git chezmoi
 fi
+echo ""
 
+# --- Phase 2: Install Nix (single-user) ---
+echo "--- Phase 2: Nix Package Manager ---"
 if ! command -v nix &>/dev/null; then
-  echo "Installing Nix (single-user)..."
+  echo "Installing Nix (single-user mode)..."
   sh <(curl -L https://nixos.org/nix/install) --no-daemon
-  if [ -f /etc/profile.d/nix.sh ]; then
-    . /etc/profile.d/nix.sh
-  elif [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
-    . "$HOME/.nix-profile/etc/profile.d/nix.sh"
-  fi
+fi
+# Load Nix into current shell
+if [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
+  . "$HOME/.nix-profile/etc/profile.d/nix.sh"
+fi
+if command -v nix &>/dev/null; then
+  echo "Nix $(nix --version)"
+fi
+echo ""
+
+# --- Phase 3: Clone Repository ---
+echo "--- Phase 3: Clone Repository ---"
+if [ -d "$DOTFILES_DIR/.git" ]; then
+  echo "Repository already exists at $DOTFILES_DIR, pulling latest..."
+  git -C "$DOTFILES_DIR" pull --ff-only || true
+else
+  echo "Cloning to $DOTFILES_DIR..."
+  git clone "$DOTFILES_REPO" "$DOTFILES_DIR"
+fi
+echo ""
+
+# --- Phase 4: Configure chezmoi ---
+echo "--- Phase 4: Configure chezmoi ---"
+CHEZMOI_CONFIG_DIR="${HOME}/.config/chezmoi"
+mkdir -p "$CHEZMOI_CONFIG_DIR"
+
+# Ask for git info if not already configured
+GIT_NAME=$(git config --global user.name 2>/dev/null || echo "")
+GIT_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
+
+if [ -z "$GIT_NAME" ]; then
+  read -rp "Git user.name: " GIT_NAME
+fi
+if [ -z "$GIT_EMAIL" ]; then
+  read -rp "Git user.email: " GIT_EMAIL
 fi
 
+cat > "$CHEZMOI_CONFIG_DIR/chezmoi.yaml" << EOF
+sourceDir: ${DOTFILES_DIR}/home
+workingTree: ${DOTFILES_DIR}
+data:
+  git:
+    name: "${GIT_NAME}"
+    email: "${GIT_EMAIL}"
+EOF
+echo "chezmoi config written to $CHEZMOI_CONFIG_DIR/chezmoi.yaml"
 echo ""
-echo "--- Phase 2: chezmoi Initialization ---"
-chezmoi init "$DOTFILES_REPO"
-chezmoi apply
 
+# --- Phase 5: Deploy Dotfiles ---
+echo "--- Phase 5: Deploy Dotfiles ---"
+chezmoi apply --force || true
 echo ""
-echo "--- Phase 3: Nix home-manager Deployment ---"
+
+# --- Phase 6: Nix home-manager ---
+echo "--- Phase 6: Nix home-manager ---"
 if command -v nix &>/dev/null; then
+  # Enable flakes
+  mkdir -p "$HOME/.config/nix"
+  if ! grep -q "flakes" "$HOME/.config/nix/nix.conf" 2>/dev/null; then
+    echo "experimental-features = nix-command flakes" >> "$HOME/.config/nix/nix.conf"
+  fi
+
+  echo "Running home-manager switch for viryoke@${HOSTNAME}..."
   cd "$DOTFILES_DIR"
   nix run home-manager -- switch --flake ".#viryoke@${HOSTNAME}" --impure || {
-    echo "WARNING: home-manager switch failed. Try manually after fixing issues."
+    echo "WARNING: home-manager switch failed. Run manually:"
+    echo "  cd ~/dotfiles && nix run home-manager -- switch --flake \".#viryoke@${HOSTNAME}\" --impure"
   }
 fi
-
 echo ""
-echo "--- Phase 4: Set Default Shell ---"
+
+# --- Phase 7: Set Default Shell ---
+echo "--- Phase 7: Default Shell ---"
 if command -v zsh &>/dev/null; then
   ZSH_PATH="$(which zsh)"
 
   if [ "$OS" = "linux" ]; then
     if ! grep -q "$ZSH_PATH" /etc/shells 2>/dev/null; then
-      echo "Adding $ZSH_PATH to /etc/shells..."
       echo "$ZSH_PATH" | sudo tee -a /etc/shells > /dev/null
     fi
   fi
@@ -90,19 +145,23 @@ if command -v zsh &>/dev/null; then
     CURRENT_SHELL=$(dscl . -read /Users/"$USER" UserShell 2>/dev/null | awk '{print $2}')
   fi
   if [ "$CURRENT_SHELL" != "$ZSH_PATH" ]; then
-    echo "Setting zsh as default shell..."
-    chsh -s "$ZSH_PATH" || echo "WARNING: Failed to set zsh as default shell. Run: sudo chsh -s $ZSH_PATH $USER"
+    chsh -s "$ZSH_PATH" || echo "Set zsh manually: sudo chsh -s $ZSH_PATH $USER"
   else
     echo "zsh is already the default shell."
   fi
 fi
+echo ""
+
+# --- Phase 8: Verification ---
+echo "--- Phase 8: Verification ---"
+bash "$DOTFILES_DIR/scripts/doctor.sh" || true
 
 echo ""
-echo "--- Phase 5: Verification ---"
-if [ -f "$DOTFILES_DIR/scripts/doctor.sh" ]; then
-  bash "$DOTFILES_DIR/scripts/doctor.sh"
-fi
-
-echo ""
-echo "=== Bootstrap Complete ==="
-echo "Next: 1) Import age identity key  2) Configure SSH keys  3) Restart terminal"
+echo "╔══════════════════════════════════════════╗"
+echo "║     Bootstrap Complete!                  ║"
+echo "╠══════════════════════════════════════════╣"
+echo "║  Next steps:                             ║"
+echo "║  1. Import age identity key              ║"
+echo "║  2. Restart terminal                     ║"
+echo "║  3. cd ~/dotfiles && git push (first time║"
+echo "╚══════════════════════════════════════════╝"

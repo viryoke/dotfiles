@@ -11,20 +11,37 @@ Cross-platform personal environment configuration using chezmoi + Nix home-manag
 
 ## Quick Start
 
-### CachyOS Linux
+**一键安装（CachyOS 和 macOS 通用）：**
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/viryoke/dotfiles/main/scripts/bootstrap.sh)
+```
+
+脚本会自动：
+1. 安装 git、chezmoi、Nix（单用户模式，不创建 build users）
+2. 克隆仓库到 `~/dotfiles`
+3. 配置 chezmoi 指向本地仓库（交互式输入 Git 用户名/邮箱）
+4. 部署 dotfiles 并运行 home-manager
+5. 设置 zsh 为默认 shell 并运行健康检查
+
+> **手动安装**：如需逐步控制，参见下方分步指南。
+
+### 手动安装（可选）
+
+#### CachyOS Linux
 
 ```bash
 # 1. 克隆仓库
 git clone https://github.com/viryoke/dotfiles.git ~/dotfiles
 
-# 2. 安装 Nix（单用户模式，不创建 build users）
+# 2. 安装 Nix（单用户模式）
 sh <(curl -L https://nixos.org/nix/install) --no-daemon
 source ~/.nix-profile/etc/profile.d/nix.sh
 
 # 3. 安装 chezmoi
 sudo pacman -S --needed chezmoi
 
-# 4. 配置 chezmoi 指向本地仓库
+# 4. 配置 chezmoi
 mkdir -p ~/.config/chezmoi
 cat > ~/.config/chezmoi/chezmoi.yaml << 'EOF'
 sourceDir: ~/dotfiles/home
@@ -39,7 +56,7 @@ EOF
 chezmoi apply
 ```
 
-### macOS
+#### macOS
 
 ```bash
 # 1. 安装 Xcode CLI tools（如未安装）
@@ -52,11 +69,11 @@ brew install git chezmoi
 # 3. 克隆仓库
 git clone https://github.com/viryoke/dotfiles.git ~/dotfiles
 
-# 4. 安装 Nix（单用户模式，不创建 build users）
+# 4. 安装 Nix（单用户模式）
 sh <(curl -L https://nixos.org/nix/install) --no-daemon
 source ~/.nix-profile/etc/profile.d/nix.sh
 
-# 5. 配置 chezmoi 指向本地仓库
+# 5. 配置 chezmoi
 mkdir -p ~/.config/chezmoi
 cat > ~/.config/chezmoi/chezmoi.yaml << 'EOF'
 sourceDir: ~/dotfiles/home
@@ -70,8 +87,6 @@ EOF
 # 6. 部署
 chezmoi apply
 ```
-
-> **说明**：`chezmoi.yaml` 中的 `sourceDir` 指向仓库的 `home/` 目录（chezmoi 模板所在位置），`workingTree` 指向仓库根目录（`flake.nix` 所在位置）。`data.git` 需要替换为你的 Git 用户名和邮箱。
 
 ## Architecture
 
