@@ -2,6 +2,10 @@
 # System monitor for zellij pane - Gruvbox Material Dark colors
 # Managed by chezmoi
 
+case "${TERM}" in
+  xterm-ghostty|unknown|"") export TERM=xterm-256color ;;
+esac
+
 RED='\033[38;5;203m'
 GREEN='\033[38;5;142m'
 YELLOW='\033[38;5;214m'
