@@ -67,14 +67,19 @@ fi
 echo ""
 echo "--- Phase 4: Set Default Shell ---"
 if command -v zsh &>/dev/null; then
-  CURRENT_SHELL=$(getent passwd "$USER" 2>/dev/null | cut -d: -f7 || dscl . -read /Users/"$USER" UserShell 2>/dev/null | awk '{print $2}')
-  if [ "$CURRENT_SHELL" != "$(which zsh)" ]; then
-    echo "Setting zsh as default shell..."
-    if [ "$OS" = "linux" ]; then
-      chsh -s "$(which zsh)" || echo "WARNING: Failed to set zsh as default shell. Run: sudo chsh -s $(which zsh) $USER"
-    elif [ "$OS" = "darwin" ]; then
-      chsh -s "$(which zsh)" || echo "WARNING: Failed to set zsh as default shell."
+  ZSH_PATH="$(which zsh)"
+
+  if [ "$OS" = "linux" ]; then
+    if ! grep -q "$ZSH_PATH" /etc/shells 2>/dev/null; then
+      echo "Adding $ZSH_PATH to /etc/shells..."
+      echo "$ZSH_PATH" | sudo tee -a /etc/shells > /dev/null
     fi
+  fi
+
+  CURRENT_SHELL=$(getent passwd "$USER" 2>/dev/null | cut -d: -f7 || dscl . -read /Users/"$USER" UserShell 2>/dev/null | awk '{print $2}')
+  if [ "$CURRENT_SHELL" != "$ZSH_PATH" ]; then
+    echo "Setting zsh as default shell..."
+    chsh -s "$ZSH_PATH" || echo "WARNING: Failed to set zsh as default shell. Run: sudo chsh -s $ZSH_PATH $USER"
   else
     echo "zsh is already the default shell."
   fi

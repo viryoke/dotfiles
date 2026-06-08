@@ -1,8 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 
-# Install claude-code via npm (global)
+# Install claude-code via npm (global, user-local prefix)
+# Nix store is read-only, so we use ~/.npm-global
+
 if command -v npm &>/dev/null; then
+  mkdir -p "$HOME/.npm-global"
+  npm config set prefix "$HOME/.npm-global"
+  export PATH="$HOME/.npm-global/bin:$PATH"
+
   if ! command -v claude &>/dev/null; then
     echo "Installing claude-code via npm..."
     npm install -g @anthropic-ai/claude-code

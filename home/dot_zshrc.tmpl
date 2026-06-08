@@ -31,6 +31,10 @@ export PATH="$HOME/.cargo/bin:$PATH"
 # === Python ===
 export UV_CACHE_DIR="$HOME/.cache/uv"
 
+# === npm global (user-local, nix store is read-only) ===
+export npm_config_prefix="$HOME/.npm-global"
+export PATH="$HOME/.npm-global/bin:$PATH"
+
 {{ if eq .chezmoi.hostname "macbook" }}
 # === Huawei Work Environment (macBook only) ===
 export HARMONYOS_SDK_HOME="$HOME/HarmonyOS-SDK"
