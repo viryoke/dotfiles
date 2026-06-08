@@ -62,7 +62,7 @@
     unzip
     delta
     bc
-    claude-code
     opencode
+    nodePackages.npm
   ];
 }

@@ -1,0 +1,14 @@
+#!/bin/bash
+set -euo pipefail
+
+# Install claude-code via npm (global)
+if command -v npm &>/dev/null; then
+  if ! command -v claude &>/dev/null; then
+    echo "Installing claude-code via npm..."
+    npm install -g @anthropic-ai/claude-code
+  else
+    echo "claude-code already installed"
+  fi
+else
+  echo "WARNING: npm not found, skipping claude-code installation"
+fi
