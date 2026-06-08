@@ -38,8 +38,6 @@ packages:
     pacman_amd64:
       - "ghostty"
       - "ghostty-terminfo"
-      - "nvidia-dkms"
-      - "cuda"
     flatpak:
       - "org.mozilla.firefox"
       - "org.telegram.desktop"
