@@ -1,8 +1,11 @@
 { pkgs, ... }: {
   programs.go = {
     enable = true;
-    goPath = "go";
-    goBin = "go/bin";
+  };
+
+  home.sessionVariables = {
+    GOPATH = "$HOME/go";
+    GOBIN = "$HOME/go/bin";
   };
 
   home.packages = with pkgs; [
