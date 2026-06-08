@@ -5,6 +5,10 @@ export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_CACHE_HOME="$HOME/.cache"
 export XDG_STATE_HOME="$HOME/.local/state"
 
+# Fix locale (OrbStack may inject broken LC_ALL)
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
 # npm global (user-local, nix store is read-only)
 export npm_config_prefix="$HOME/.npm-global"
 export PATH="$HOME/.npm-global/bin:$PATH"
