@@ -4,6 +4,5 @@
     uv
     pixi
     ruff
-    python3Packages.pip
   ];
 }
