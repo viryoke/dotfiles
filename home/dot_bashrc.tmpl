@@ -1,7 +1,7 @@
 # ~/.bashrc - Managed by chezmoi
 # Auto-switch to zsh if available (for orb/ssh sessions that default to bash)
 
-if command -v zsh &>/dev/null && [ -z "$ZSH_STARTED" ]; then
+if command -v zsh &>/dev/null && [ -z "$ZSH_STARTED" ] && [ -t 0 ] && [ -t 1 ]; then
   export ZSH_STARTED=1
   exec zsh -l
 fi
