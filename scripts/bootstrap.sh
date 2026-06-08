@@ -71,7 +71,11 @@ echo ""
 echo "--- Phase 3: Clone Repository ---"
 if [ -d "$DOTFILES_DIR/.git" ]; then
   echo "Repository already exists at $DOTFILES_DIR, pulling latest..."
-  git -C "$DOTFILES_DIR" pull --ff-only || true
+  git -C "$DOTFILES_DIR" pull --ff-only || git -C "$DOTFILES_DIR" fetch origin && git -C "$DOTFILES_DIR" reset --hard origin/main
+elif [ -d "$DOTFILES_DIR" ]; then
+  echo "$DOTFILES_DIR exists but is not a git repo, removing..."
+  rm -rf "$DOTFILES_DIR"
+  git clone "$DOTFILES_REPO" "$DOTFILES_DIR"
 else
   echo "Cloning to $DOTFILES_DIR..."
   git clone "$DOTFILES_REPO" "$DOTFILES_DIR"
