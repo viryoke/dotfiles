@@ -17,4 +17,9 @@ dot_config/karabiner/
 {{ if ne .chezmoi.os "linux" }}
 dot_config/waybar/
 dot_config/swaylock/
+dot_config/rofi-wayland/
+dot_config/mako/
+dot_config/fcitx5/
+dot_local/share/fcitx5/
+dot_local/bin/executable_rime-build.sh
 {{ end }}

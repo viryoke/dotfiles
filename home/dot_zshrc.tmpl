@@ -64,6 +64,23 @@ alias hermes-dev='cd ~/Workspace/hermes-agent && uv run python main.py --dev'
 alias obsidian-sync='cd ~/Documents/ObsidianVault && git add -A && git commit -m "sync: $(date +%Y-%m-%d)" && git push'
 alias obsidian-pull='cd ~/Documents/ObsidianVault && git pull'
 
+{{ if eq .chezmoi.os "linux" }}
+# === Fcitx5 Input Method (Wayland) ===
+export GTK_IM_MODULE=fcitx
+export QT_IM_MODULE=fcitx
+export XMODIFIERS=@im=fcitx
+export SDL_IM_MODULE=fcitx
+export INPUT_METHOD=fcitx
+
+# === Rofi Menus (Wayland) ===
+alias launcher='rofi -show drun'
+alias clipmenu='~/.config/rofi-wayland/scripts/clipboard.sh'
+alias screenshot='~/.config/rofi-wayland/scripts/screenshot.sh'
+alias emoji='~/.config/rofi-wayland/scripts/emoji.sh'
+alias powermenu='~/.config/rofi-wayland/scripts/powermenu.sh'
+alias wallpaper='~/.config/rofi-wayland/scripts/wallpaper.sh'
+{{ end }}
+
 # === Tool initialization ===
 eval "$(zoxide init zsh)"
 
