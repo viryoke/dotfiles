@@ -1,0 +1,30 @@
+# Mako notification daemon — Gruvbox Material Dark
+# Managed by chezmoi (Wayland-native)
+
+background-color=#282828e0
+text-color=#ebdbb2
+border-color=#fabd2f
+border-size=3
+border-radius=8
+progress-color=over #3c3836
+font=JetBrainsMono Nerd Font 13
+padding=12,16
+margin=16
+width=360
+height=200
+default-timeout=5000
+max-visible=5
+group-by=app-name
+
+[summary~="Battery|Power"]
+border-color=#fb4934
+default-timeout=0
+
+[app-name="spotify"]
+default-timeout=3000
+
+[app-name="mpv"]
+default-timeout=3000
+
+[app-name="firefox"]
+default-timeout=3000
