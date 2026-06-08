@@ -1,0 +1,102 @@
+#!/bin/bash
+set -euo pipefail
+
+PASS=0
+FAIL=0
+WARN=0
+
+check() {
+  local name="$1"
+  local cmd="$2"
+  if eval "$cmd" &>/dev/null; then
+    echo "  [OK] $name"
+    ((PASS++))
+  else
+    echo "  [FAIL] $name"
+    ((FAIL++))
+  fi
+}
+
+warn() {
+  local name="$1"
+  local cmd="$2"
+  if eval "$cmd" &>/dev/null; then
+    echo "  [OK] $name"
+    ((PASS++))
+  else
+    echo "  [WARN] $name"
+    ((WARN++))
+  fi
+}
+
+echo "=== Environment Health Check ==="
+echo ""
+
+echo "--- Core Tools ---"
+check "chezmoi" "command -v chezmoi"
+check "nix" "command -v nix"
+check "git" "command -v git"
+
+echo ""
+echo "--- Shell ---"
+check "zsh" "command -v zsh"
+check "starship" "command -v starship"
+check "zellij" "command -v zellij"
+
+echo ""
+echo "--- Editor ---"
+check "neovim" "command -v nvim"
+check "lazygit" "command -v lazygit"
+
+echo ""
+echo "--- Dev Tools ---"
+check "go" "command -v go"
+check "python3" "command -v python3"
+check "uv" "command -v uv"
+check "pixi" "command -v pixi"
+check "rustc" "command -v rustc"
+check "cargo" "command -v cargo"
+check "java" "command -v java"
+check "bun" "command -v bun"
+check "node" "command -v node"
+check "lua" "command -v lua"
+
+echo ""
+echo "--- CLI Utilities ---"
+check "ripgrep" "command -v rg"
+check "fd" "command -v fd"
+check "fzf" "command -v fzf"
+check "eza" "command -v eza"
+check "zoxide" "command -v zoxide"
+check "bat" "command -v bat"
+check "yazi" "command -v yazi"
+check "jq" "command -v jq"
+
+echo ""
+echo "--- Git Configuration ---"
+check "git user.name" "git config user.name"
+check "git user.email" "git config user.email"
+warn "SSH key exists" "test -f ~/.ssh/id_ed25519"
+
+echo ""
+echo "--- chezmoi Status ---"
+check "chezmoi source dir" "test -d ~/.local/share/chezmoi"
+if command -v chezmoi &>/dev/null; then
+  DIFF_COUNT=$(chezmoi diff 2>/dev/null | grep -c '^diff' || true)
+  if [ "$DIFF_COUNT" -eq 0 ]; then
+    echo "  [OK] No pending changes"
+    ((PASS++))
+  else
+    echo "  [WARN] $DIFF_COUNT files differ from source"
+    ((WARN++))
+  fi
+fi
+
+echo ""
+echo "==============================="
+echo "Results: $PASS passed, $FAIL failed, $WARN warnings"
+echo "==============================="
+
+if [ "$FAIL" -gt 0 ]; then
+  exit 1
+fi
