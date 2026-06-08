@@ -63,6 +63,5 @@
     delta
     bc
     opencode
-    nodePackages.npm
   ];
 }
