@@ -18,6 +18,8 @@
     ../../modules/linux/packages.nix
   ];
 
+  nixpkgs.config.allowUnfree = true;
+
   home = {
     username = "viryoke";
     homeDirectory = "/home/viryoke";

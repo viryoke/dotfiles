@@ -17,6 +17,8 @@
     ../../modules/darwin/packages.nix
   ];
 
+  nixpkgs.config.allowUnfree = true;
+
   home = {
     username = "viryoke";
     homeDirectory = "/Users/viryoke";
