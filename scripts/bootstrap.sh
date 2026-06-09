@@ -87,26 +87,39 @@ echo "--- Phase 4: Configure chezmoi ---"
 CHEZMOI_CONFIG_DIR="${HOME}/.config/chezmoi"
 mkdir -p "$CHEZMOI_CONFIG_DIR"
 
-# Ask for git info if not already configured
-GIT_NAME=$(git config --global user.name 2>/dev/null || echo "")
-GIT_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
+# Check if chezmoi config already exists (yaml or toml)
+EXISTING_CONFIG=""
+for ext in toml yaml yml; do
+  if [ -f "$CHEZMOI_CONFIG_DIR/chezmoi.$ext" ]; then
+    EXISTING_CONFIG="$CHEZMOI_CONFIG_DIR/chezmoi.$ext"
+    break
+  fi
+done
 
-if [ -z "$GIT_NAME" ]; then
-  read -rp "Git user.name: " GIT_NAME
-fi
-if [ -z "$GIT_EMAIL" ]; then
-  read -rp "Git user.email: " GIT_EMAIL
-fi
+if [ -n "$EXISTING_CONFIG" ]; then
+  echo "chezmoi config already exists: $EXISTING_CONFIG (skipping)"
+else
+  # Ask for git info
+  GIT_NAME=$(git config --global user.name 2>/dev/null || echo "")
+  GIT_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
 
-cat > "$CHEZMOI_CONFIG_DIR/chezmoi.yaml" << EOF
-sourceDir: ${DOTFILES_DIR}/home
-workingTree: ${DOTFILES_DIR}
-data:
-  git:
-    name: "${GIT_NAME}"
-    email: "${GIT_EMAIL}"
+  if [ -z "$GIT_NAME" ]; then
+    read -rp "Git user.name: " GIT_NAME < /dev/tty
+  fi
+  if [ -z "$GIT_EMAIL" ]; then
+    read -rp "Git user.email: " GIT_EMAIL < /dev/tty
+  fi
+
+  cat > "$CHEZMOI_CONFIG_DIR/chezmoi.toml" << EOF
+sourceDir = "${DOTFILES_DIR}/home"
+workingTree = "${DOTFILES_DIR}"
+
+[data.git]
+name = "${GIT_NAME}"
+email = "${GIT_EMAIL}"
 EOF
-echo "chezmoi config written to $CHEZMOI_CONFIG_DIR/chezmoi.yaml"
+  echo "chezmoi config written to $CHEZMOI_CONFIG_DIR/chezmoi.toml"
+fi
 echo ""
 
 # --- Phase 5: Deploy Dotfiles ---

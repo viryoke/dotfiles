@@ -41,15 +41,15 @@ source ~/.nix-profile/etc/profile.d/nix.sh
 # 3. 安装 chezmoi
 sudo pacman -S --needed chezmoi
 
-# 4. 配置 chezmoi
+# 4. 配置 chezmoi（如果还没有 ~/.config/chezmoi/ 下的配置文件）
 mkdir -p ~/.config/chezmoi
-cat > ~/.config/chezmoi/chezmoi.yaml << 'EOF'
-sourceDir: ~/dotfiles/home
-workingTree: ~/dotfiles
-data:
-  git:
-    name: <your-name>
-    email: <your-email>
+cat > ~/.config/chezmoi/chezmoi.toml << 'EOF'
+sourceDir = "~/dotfiles/home"
+workingTree = "~/dotfiles"
+
+[data.git]
+name = "<your-name>"
+email = "<your-email>"
 EOF
 
 # 5. 部署
@@ -73,15 +73,15 @@ git clone https://github.com/viryoke/dotfiles.git ~/dotfiles
 sh <(curl -L https://nixos.org/nix/install) --no-daemon
 source ~/.nix-profile/etc/profile.d/nix.sh
 
-# 5. 配置 chezmoi
+# 5. 配置 chezmoi（如果还没有 ~/.config/chezmoi/ 下的配置文件）
 mkdir -p ~/.config/chezmoi
-cat > ~/.config/chezmoi/chezmoi.yaml << 'EOF'
-sourceDir: ~/dotfiles/home
-workingTree: ~/dotfiles
-data:
-  git:
-    name: <your-name>
-    email: <your-email>
+cat > ~/.config/chezmoi/chezmoi.toml << 'EOF'
+sourceDir = "~/dotfiles/home"
+workingTree = "~/dotfiles"
+
+[data.git]
+name = "<your-name>"
+email = "<your-email>"
 EOF
 
 # 6. 部署
