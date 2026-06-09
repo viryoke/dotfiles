@@ -120,9 +120,5 @@ bindkey '^R' fzf-history-widget
 bindkey '^T' fzf-file-widget
 bindkey '^[c' fzf-cd-widget
 
-# === Auto-launch zellij ===
-if [ -z "$ZELLIJ" ] && [ -z "$TMUX" ] && [ -z "$ZELLIJ_NO_AUTO" ] && [ -t 0 ] && [ -t 1 ]; then
-  if command -v zellij &>/dev/null; then
-    exec zellij attach -c main
-  fi
-fi
+# === Zellij (manual launch: type 'z' or 'zellij attach -c main') ===
+alias z='zellij attach -c main'
