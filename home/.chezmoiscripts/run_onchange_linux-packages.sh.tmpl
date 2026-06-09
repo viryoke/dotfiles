@@ -5,13 +5,16 @@ echo "=== Installing Linux packages ==="
 
 if command -v pacman &>/dev/null; then
   echo "Installing pacman packages..."
+  # --ignore: skip nvidia packages (CachyOS handles GPU drivers)
   sudo pacman -S --needed --noconfirm \
+    --ignore nvidia-open-dkms,nvidia-dkms,nvidia,nvidia-open \
     {{ range .packages.linux.pacman }}{{ . | quote }} {{ end }} || true
 
   {{ if eq .chezmoi.arch "amd64" }}
   {{ if .packages.linux.pacman_amd64 }}
   echo "Installing amd64-specific pacman packages..."
   sudo pacman -S --needed --noconfirm \
+    --ignore nvidia-open-dkms,nvidia-dkms,nvidia,nvidia-open \
     {{ range .packages.linux.pacman_amd64 }}{{ . | quote }} {{ end }} || true
   {{ end }}
   {{ end }}
