@@ -17,6 +17,17 @@
     };
   };
 
+  nixConfig = {
+    substituters = [
+      "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
+      "https://mirror.sjtu.edu.cn/nix-channels/store"
+      "https://cache.nixos.org"
+    ];
+    trusted-public-keys = [
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+    ];
+  };
+
   outputs = { self, nixpkgs, home-manager, nix-darwin, agenix, ... }:
     let
       supportedSystems = [ "x86_64-linux" "aarch64-darwin" ];

@@ -140,18 +140,21 @@ fi
 # Required for single-user Nix: custom substituters are rejected unless the
 # user is in the trusted-users list at the daemon level (/etc/nix/nix.conf).
 # Without this, every Nix command spams "ignoring untrusted substituter" warnings.
-if [ -f /etc/nix/nix.conf ]; then
-  if grep -q "trusted-users" /etc/nix/nix.conf 2>/dev/null; then
-    # trusted-users already exists — check if current user is listed
-    if ! grep -q "trusted-users.*$USER" /etc/nix/nix.conf 2>/dev/null; then
-      echo "⚠ $USER not in trusted-users. Fix:"
-      echo "  sudo sed -i '' 's/^trusted-users.*/& $USER/' /etc/nix/nix.conf"
-    fi
-  else
-    # Append trusted-users
-    echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && \
-      echo "Added trusted-users = root $USER to /etc/nix/nix.conf"
+if [ ! -f /etc/nix/nix.conf ]; then
+  # On macOS single-user installs, /etc/nix/nix.conf may not exist — create it
+  sudo mkdir -p /etc/nix
+  echo "trusted-users = root $USER" | sudo tee /etc/nix/nix.conf > /dev/null 2>&1 && \
+    echo "Created /etc/nix/nix.conf with trusted-users = root $USER"
+elif grep -q "trusted-users" /etc/nix/nix.conf 2>/dev/null; then
+  # trusted-users already exists — check if current user is listed
+  if ! grep -q "trusted-users.*$USER" /etc/nix/nix.conf 2>/dev/null; then
+    echo "⚠ $USER not in trusted-users. Fix:"
+    echo "  sudo sed -i '' 's/^trusted-users.*/& $USER/' /etc/nix/nix.conf"
   fi
+else
+  # Append trusted-users
+  echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && \
+    echo "Added trusted-users = root $USER to /etc/nix/nix.conf"
 fi
 echo ""
 

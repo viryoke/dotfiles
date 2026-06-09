@@ -21,32 +21,36 @@ echo ""
 echo "── Phase 1: Configuring mirrors ──"
 
 # Nix binary cache mirrors (China) — ensures nix downloads use domestic CDN
-# trusted-users must be set in system-level /etc/nix/nix.conf (not here)
-# because it is a restricted setting. bootstrap.sh handles that.
+# trusted-public-keys is set here so Nix can verify package signatures directly,
+# without relying solely on trusted-users (which requires /etc/nix/nix.conf + daemon restart).
 mkdir -p "$HOME/.config/nix"
 cat > "$HOME/.config/nix/nix.conf" << 'NIXCONF'
 experimental-features = nix-command flakes
 substituters = https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org
+trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 NIXCONF
 
-# Ensure trusted-users in system /etc/nix/nix.conf (suppresses "untrusted substituter" warnings)
+# Ensure trusted-users in system /etc/nix/nix.conf (defense-in-depth alongside trusted-public-keys)
 NIX_CONF_CHANGED=false
-if [ -f /etc/nix/nix.conf ]; then
-  if ! grep -q "trusted-users.*$(whoami)" /etc/nix/nix.conf 2>/dev/null; then
-    echo "[nix] adding trusted-users to /etc/nix/nix.conf (needs sudo)..."
-    if grep -q "trusted-users" /etc/nix/nix.conf 2>/dev/null; then
-      {{ if eq .chezmoi.os "darwin" -}}
-      sudo sed -i '' "s/^trusted-users.*/& $(whoami)/" /etc/nix/nix.conf 2>/dev/null && echo "[nix] ✓ trusted-users updated" || echo "[nix] ⚠ trusted-users update failed"
-      {{ else -}}
-      sudo sed -i "s/^trusted-users.*/& $(whoami)/" /etc/nix/nix.conf 2>/dev/null && echo "[nix] ✓ trusted-users updated" || echo "[nix] ⚠ trusted-users update failed"
-      {{ end -}}
-    else
-      echo "trusted-users = root $(whoami)" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && echo "[nix] ✓ trusted-users added" || echo "[nix] ⚠ trusted-users add failed"
-    fi
-    NIX_CONF_CHANGED=true
+if [ ! -f /etc/nix/nix.conf ]; then
+  # On macOS single-user installs, /etc/nix/nix.conf may not exist — create it
+  echo "trusted-users = root $(whoami)" | sudo tee /etc/nix/nix.conf > /dev/null 2>&1 && \
+    echo "[nix] ✓ /etc/nix/nix.conf created with trusted-users" || echo "[nix] ⚠ /etc/nix/nix.conf creation failed"
+  NIX_CONF_CHANGED=true
+elif ! grep -q "trusted-users.*$(whoami)" /etc/nix/nix.conf 2>/dev/null; then
+  echo "[nix] adding trusted-users to /etc/nix/nix.conf (needs sudo)..."
+  if grep -q "trusted-users" /etc/nix/nix.conf 2>/dev/null; then
+    {{ if eq .chezmoi.os "darwin" -}}
+    sudo sed -i '' "s/^trusted-users.*/& $(whoami)/" /etc/nix/nix.conf 2>/dev/null && echo "[nix] ✓ trusted-users updated" || echo "[nix] ⚠ trusted-users update failed"
+    {{ else -}}
+    sudo sed -i "s/^trusted-users.*/& $(whoami)/" /etc/nix/nix.conf 2>/dev/null && echo "[nix] ✓ trusted-users updated" || echo "[nix] ⚠ trusted-users update failed"
+    {{ end -}}
   else
-    echo "[nix] ✓ trusted-users already configured"
+    echo "trusted-users = root $(whoami)" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && echo "[nix] ✓ trusted-users added" || echo "[nix] ⚠ trusted-users add failed"
   fi
+  NIX_CONF_CHANGED=true
+else
+  echo "[nix] ✓ trusted-users already configured"
 fi
 
 # Restart Nix daemon if config changed (required for daemon to re-read nix.conf)
