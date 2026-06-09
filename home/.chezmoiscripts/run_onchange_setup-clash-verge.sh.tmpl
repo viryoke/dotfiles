@@ -1,0 +1,104 @@
+#!/bin/bash
+set -euo pipefail
+
+{{ if eq .chezmoi.os "linux" -}}
+# Setup clash-verge-rev: autostart, silent start, TUN mode
+# Runs when this script changes — idempotent
+
+if ! command -v clash-verge &>/dev/null; then
+  echo "clash-verge not found, skipping setup"
+  exit 0
+fi
+
+echo "=== Setting up clash-verge-rev ==="
+
+DATA_DIR="$HOME/.local/share/io.github.clash-verge-rev.clash-verge-rev"
+
+# --- 1. XDG Autostart (boot login) ---
+mkdir -p "$HOME/.config/autostart"
+cat > "$HOME/.config/autostart/Clash Verge.desktop" << 'EOF'
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Clash Verge
+Comment=Clash Verge startup
+Exec=/usr/bin/clash-verge
+StartupNotify=false
+Terminal=false
+EOF
+echo "  ✓ Autostart entry"
+
+# --- 2. verge.yaml: silent start + auto launch + TUN ---
+mkdir -p "$DATA_DIR"
+
+# Helper: set or append a key in verge.yaml
+set_verge_key() {
+  local key="$1" val="$2" file="$DATA_DIR/verge.yaml"
+  if grep -q "^${key}:" "$file" 2>/dev/null; then
+    sed -i "s|^${key}:.*|${key}: ${val}|" "$file"
+  else
+    echo "${key}: ${val}" >> "$file"
+  fi
+}
+
+if [ ! -f "$DATA_DIR/verge.yaml" ]; then
+  cat > "$DATA_DIR/verge.yaml" << 'EOF'
+# Clash Verge Config — bootstrapped by dotfiles
+
+language: en
+theme_mode: system
+enable_tun_mode: true
+enable_auto_launch: true
+enable_silent_start: true
+enable_system_proxy: false
+clash_core: verge-mihomo
+EOF
+  echo "  ✓ verge.yaml created (fresh install)"
+else
+  set_verge_key "enable_silent_start" "true"
+  set_verge_key "enable_auto_launch" "true"
+  set_verge_key "enable_tun_mode" "true"
+  set_verge_key "enable_system_proxy" "false"
+  echo "  ✓ verge.yaml patched"
+fi
+
+# --- 3. Merge Profile: force TUN on every subscription ---
+PROFILES_DIR="$DATA_DIR/profiles"
+mkdir -p "$PROFILES_DIR"
+
+TUN_CONFIG="tun:
+  enable: true
+  stack: system
+  auto-route: true
+  auto-detect-interface: true
+  dns-hijack:
+    - any:53"
+
+# Write to global Merge.yaml (applies to all profiles)
+cat > "$PROFILES_DIR/Merge.yaml" << EOF
+# Profile Enhancement Merge — force TUN mode
+# Managed by dotfiles
+
+${TUN_CONFIG}
+EOF
+
+# Also write to any subscription-specific merge profiles
+if [ -f "$DATA_DIR/profiles.yaml" ]; then
+  # Use awk to properly extract file: from items where type: merge (skip global Merge)
+  awk '/^- uid:/{uid=$3; type=""; file=""} /^  type:/{type=$2} /^  file:/{file=$2} type=="merge" && file!="" && file!="Merge.yaml"{print file; type=""}' \
+    "$DATA_DIR/profiles.yaml" | while read -r merge_file; do
+    if [ -n "$merge_file" ]; then
+      cat > "$PROFILES_DIR/$merge_file" << EOF
+# Profile Enhancement Merge — force TUN mode
+# Managed by dotfiles
+
+${TUN_CONFIG}
+EOF
+      echo "  ✓ Subscription merge patched: $merge_file"
+    fi
+  done || true
+fi
+echo "  ✓ Merge profile (TUN forced on)"
+
+echo "=== clash-verge-rev setup complete ==="
+{{ end -}}

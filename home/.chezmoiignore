@@ -11,8 +11,6 @@ scripts/
 docs/
 
 {{ if ne .chezmoi.os "linux" }}
-.config/rofi-wayland
-.config/mako
 .config/fcitx5
 .local/share/fcitx5
 .local/bin/rime-build.sh
