@@ -84,13 +84,12 @@ fi
 # Restart Nix daemon if config changed (required for daemon to re-read nix.conf)
 if [ "$NIX_CONF_CHANGED" = true ]; then
   {{ if eq .chezmoi.os "darwin" -}}
-  if launchctl print system/org.nixos.nix-daemon &>/dev/null; then
-    sudo launchctl kickstart -k system/org.nixos.nix-daemon 2>/dev/null && echo "[nix] ✓ daemon restarted" || echo "[nix] ⚠ daemon restart failed"
-  fi
+  sudo launchctl kickstart -k system/org.nixos.nix-daemon 2>/dev/null && echo "[nix] ✓ daemon restarted" \
+    || { sudo pkill -HUP nix-daemon 2>/dev/null && echo "[nix] ✓ daemon reloaded (SIGHUP)" \
+      || echo "[nix] ⚠ daemon restart failed — run: sudo launchctl kickstart -k system/org.nixos.nix-daemon"; }
   {{ else -}}
-  if systemctl is-active --quiet nix-daemon.service 2>/dev/null; then
-    sudo systemctl restart nix-daemon.service 2>/dev/null && echo "[nix] ✓ daemon restarted" || echo "[nix] ⚠ daemon restart failed"
-  fi
+  sudo systemctl restart nix-daemon.service 2>/dev/null && echo "[nix] ✓ daemon restarted" \
+    || echo "[nix] ⚠ daemon restart failed — run: sudo systemctl restart nix-daemon"
   {{ end -}}
 fi
 echo "[mirrors] ✓ Nix: TUNA + SJTU"

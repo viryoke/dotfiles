@@ -172,13 +172,12 @@ fi
 
 # Restart Nix daemon to pick up /etc/nix/nix.conf changes (macOS + Linux)
 if [ "$OS" = "darwin" ]; then
-  if launchctl print system/org.nixos.nix-daemon &>/dev/null; then
-    sudo launchctl kickstart -k system/org.nixos.nix-daemon 2>/dev/null && echo "Nix daemon restarted" || echo "⚠ daemon restart failed"
-  fi
+  sudo launchctl kickstart -k system/org.nixos.nix-daemon 2>/dev/null && echo "Nix daemon restarted" \
+    || { sudo pkill -HUP nix-daemon 2>/dev/null && echo "Nix daemon reloaded (SIGHUP)" \
+      || echo "⚠ No Nix daemon found — run manually: sudo launchctl kickstart -k system/org.nixos.nix-daemon"; }
 else
-  if systemctl is-active --quiet nix-daemon.service 2>/dev/null; then
-    sudo systemctl restart nix-daemon.service 2>/dev/null && echo "Nix daemon restarted" || echo "⚠ daemon restart failed"
-  fi
+  sudo systemctl restart nix-daemon.service 2>/dev/null && echo "Nix daemon restarted" \
+    || echo "⚠ daemon restart failed — run manually: sudo systemctl restart nix-daemon"
 fi
 echo ""
 echo "--- Phase 4: Clone Repository ---"
