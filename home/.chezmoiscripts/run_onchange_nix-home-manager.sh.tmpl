@@ -7,6 +7,8 @@ DOTFILES_DIR="{{ .chezmoi.workingTree }}"
 # Normalize hostname to match flake.nix homeConfigurations keys
 {{ if or (eq .chezmoi.hostname "macbook") (contains "MacBook" .chezmoi.hostname) }}
 HOSTNAME="macbook"
+{{ else if contains "cachyos" .chezmoi.hostname }}
+HOSTNAME="cachyos-desktop"
 {{ else }}
 HOSTNAME="{{ .chezmoi.hostname }}"
 {{ end }}

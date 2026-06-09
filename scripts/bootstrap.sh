@@ -16,8 +16,13 @@ OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 ARCH="$(uname -m)"
 RAW_HOSTNAME="$(hostname)"
 
+# Normalize hostname to match flake.nix homeConfigurations keys
+# "viryokes-MacBook-Air" / "MacBook-Pro" / etc → "macbook"
+# "cachyos-x8664" / "cachyos-xxx" / etc → "cachyos-desktop"
 if echo "$RAW_HOSTNAME" | grep -qi "macbook"; then
   HOSTNAME="macbook"
+elif echo "$RAW_HOSTNAME" | grep -qi "cachyos"; then
+  HOSTNAME="cachyos-desktop"
 else
   HOSTNAME="$RAW_HOSTNAME"
 fi
