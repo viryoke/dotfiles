@@ -6,8 +6,11 @@ echo "=== Installing Linux packages ==="
 
 if command -v pacman &>/dev/null; then
   echo "Installing pacman packages..."
-  sudo pacman -S --needed --noconfirm \
-    {{ range .packages.linux.pacman }}{{ . | quote }} {{ end }}
+  # --ignore nvidia-open-dkms: CachyOS uses pre-compiled kernel modules
+  # (linux-cachyos-lts-nvidia-open), installing DKMS would cause conflict
+  # Redirect stdin from /dev/tty so pacman can prompt for conflict resolution
+  sudo pacman -S --needed --noconfirm --ignore nvidia-open-dkms \
+    {{ range .packages.linux.pacman }}{{ . | quote }} {{ end }} < /dev/tty
 
   {{ if eq .chezmoi.arch "amd64" }}
   {{ if .packages.linux.pacman_amd64 }}
