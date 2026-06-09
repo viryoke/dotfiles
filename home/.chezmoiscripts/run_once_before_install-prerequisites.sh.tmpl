@@ -42,15 +42,33 @@ trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDS
 EOF
 echo "  Nix mirrors configured (TUNA/SJTU)"
 
-# Configure trusted-users in system /etc/nix/nix.conf (suppresses "untrusted substituter" warnings)
-# On Linux, /etc/nix/nix.conf may not exist for single-user installs — create it if needed
+# Configure system-level /etc/nix/nix.conf (daemon level — always respected)
+# substituters and trusted-public-keys must be here because they are restricted
+# settings in user-level ~/.config/nix/nix.conf (require trusted-users).
+NIX_SUBSTITUTERS="https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org"
+NIX_TRUSTED_KEYS="cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+
 if [ ! -f /etc/nix/nix.conf ]; then
   sudo mkdir -p /etc/nix
-  echo "trusted-users = root $USER" | sudo tee /etc/nix/nix.conf > /dev/null 2>&1 && \
-    echo "  /etc/nix/nix.conf created with trusted-users" || true
-elif ! grep -q "trusted-users.*$USER" /etc/nix/nix.conf 2>/dev/null; then
-  echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
-  echo "  trusted-users configured"
+  sudo tee /etc/nix/nix.conf > /dev/null 2>&1 << SYSCONF
+trusted-users = root $USER
+substituters = ${NIX_SUBSTITUTERS}
+trusted-public-keys = ${NIX_TRUSTED_KEYS}
+SYSCONF
+  echo "  /etc/nix/nix.conf created (trusted-users + substituters + keys)"
+else
+  if ! grep -q "trusted-users.*$USER" /etc/nix/nix.conf 2>/dev/null; then
+    echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
+    echo "  trusted-users configured"
+  fi
+  if ! grep -q "mirrors.tuna" /etc/nix/nix.conf 2>/dev/null; then
+    echo "substituters = ${NIX_SUBSTITUTERS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
+    echo "  substituters configured"
+  fi
+  if ! grep -q "cache.nixos.org-1" /etc/nix/nix.conf 2>/dev/null; then
+    echo "trusted-public-keys = ${NIX_TRUSTED_KEYS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
+    echo "  trusted-public-keys configured"
+  fi
 fi
 {{ else if eq .chezmoi.os "darwin" }}
 if ! xcode-select -p &>/dev/null; then
@@ -80,14 +98,32 @@ trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDS
 EOF
 echo "  Nix mirrors configured (TUNA/SJTU)"
 
-# Configure trusted-users in system /etc/nix/nix.conf (suppresses "untrusted substituter" warnings)
+# Configure system-level /etc/nix/nix.conf (daemon level — always respected)
 # On macOS single-user installs, /etc/nix/nix.conf may not exist — create it if needed
+NIX_SUBSTITUTERS="https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org"
+NIX_TRUSTED_KEYS="cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+
 if [ ! -f /etc/nix/nix.conf ]; then
-  echo "trusted-users = root $USER" | sudo tee /etc/nix/nix.conf > /dev/null 2>&1 && \
-    echo "  /etc/nix/nix.conf created with trusted-users" || true
-elif ! grep -q "trusted-users.*$USER" /etc/nix/nix.conf 2>/dev/null; then
-  echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
-  echo "  trusted-users configured"
+  sudo mkdir -p /etc/nix
+  sudo tee /etc/nix/nix.conf > /dev/null 2>&1 << SYSCONF
+trusted-users = root $USER
+substituters = ${NIX_SUBSTITUTERS}
+trusted-public-keys = ${NIX_TRUSTED_KEYS}
+SYSCONF
+  echo "  /etc/nix/nix.conf created (trusted-users + substituters + keys)"
+else
+  if ! grep -q "trusted-users.*$USER" /etc/nix/nix.conf 2>/dev/null; then
+    echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
+    echo "  trusted-users configured"
+  fi
+  if ! grep -q "mirrors.tuna" /etc/nix/nix.conf 2>/dev/null; then
+    echo "substituters = ${NIX_SUBSTITUTERS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
+    echo "  substituters configured"
+  fi
+  if ! grep -q "cache.nixos.org-1" /etc/nix/nix.conf 2>/dev/null; then
+    echo "trusted-public-keys = ${NIX_TRUSTED_KEYS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
+    echo "  trusted-public-keys configured"
+  fi
 fi
 {{ end }}
 

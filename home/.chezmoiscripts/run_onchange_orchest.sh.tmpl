@@ -21,8 +21,10 @@ echo ""
 echo "── Phase 1: Configuring mirrors ──"
 
 # Nix binary cache mirrors (China) — ensures nix downloads use domestic CDN
-# trusted-public-keys is set here so Nix can verify package signatures directly,
-# without relying solely on trusted-users (which requires /etc/nix/nix.conf + daemon restart).
+# substituters and trusted-public-keys are restricted/semi-restricted settings:
+# - In ~/.config/nix/nix.conf: substituters requires user in trusted-users
+# - In flake nixConfig: both require --accept-flake-config or trusted-users
+# Solution: write to /etc/nix/nix.conf (daemon level, always respected) AND user config.
 mkdir -p "$HOME/.config/nix"
 cat > "$HOME/.config/nix/nix.conf" << 'NIXCONF'
 experimental-features = nix-command flakes
@@ -30,27 +32,53 @@ substituters = https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://m
 trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 NIXCONF
 
-# Ensure trusted-users in system /etc/nix/nix.conf (defense-in-depth alongside trusted-public-keys)
+# ── System-level /etc/nix/nix.conf (daemon-level, always respected) ──
+# This is the authoritative place for restricted settings like substituters.
 NIX_CONF_CHANGED=false
+NIX_SUBSTITUTERS="https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org"
+NIX_TRUSTED_KEYS="cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+
 if [ ! -f /etc/nix/nix.conf ]; then
-  # On macOS single-user installs, /etc/nix/nix.conf may not exist — create it
-  echo "trusted-users = root $(whoami)" | sudo tee /etc/nix/nix.conf > /dev/null 2>&1 && \
-    echo "[nix] ✓ /etc/nix/nix.conf created with trusted-users" || echo "[nix] ⚠ /etc/nix/nix.conf creation failed"
-  NIX_CONF_CHANGED=true
-elif ! grep -q "trusted-users.*$(whoami)" /etc/nix/nix.conf 2>/dev/null; then
-  echo "[nix] adding trusted-users to /etc/nix/nix.conf (needs sudo)..."
-  if grep -q "trusted-users" /etc/nix/nix.conf 2>/dev/null; then
-    {{ if eq .chezmoi.os "darwin" -}}
-    sudo sed -i '' "s/^trusted-users.*/& $(whoami)/" /etc/nix/nix.conf 2>/dev/null && echo "[nix] ✓ trusted-users updated" || echo "[nix] ⚠ trusted-users update failed"
-    {{ else -}}
-    sudo sed -i "s/^trusted-users.*/& $(whoami)/" /etc/nix/nix.conf 2>/dev/null && echo "[nix] ✓ trusted-users updated" || echo "[nix] ⚠ trusted-users update failed"
-    {{ end -}}
-  else
-    echo "trusted-users = root $(whoami)" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && echo "[nix] ✓ trusted-users added" || echo "[nix] ⚠ trusted-users add failed"
-  fi
-  NIX_CONF_CHANGED=true
+  sudo mkdir -p /etc/nix
+  sudo tee /etc/nix/nix.conf > /dev/null 2>&1 << SYSCONF
+trusted-users = root $(whoami)
+substituters = ${NIX_SUBSTITUTERS}
+trusted-public-keys = ${NIX_TRUSTED_KEYS}
+SYSCONF
+  echo "[nix] ✓ /etc/nix/nix.conf created (trusted-users + substituters + keys)" && NIX_CONF_CHANGED=true || echo "[nix] ⚠ /etc/nix/nix.conf creation failed"
 else
-  echo "[nix] ✓ trusted-users already configured"
+  # Ensure trusted-users
+  if ! grep -q "trusted-users.*$(whoami)" /etc/nix/nix.conf 2>/dev/null; then
+    echo "[nix] adding trusted-users to /etc/nix/nix.conf (needs sudo)..."
+    if grep -q "trusted-users" /etc/nix/nix.conf 2>/dev/null; then
+      {{ if eq .chezmoi.os "darwin" -}}
+      sudo sed -i '' "s/^trusted-users.*/& $(whoami)/" /etc/nix/nix.conf 2>/dev/null && echo "[nix] ✓ trusted-users updated" || echo "[nix] ⚠ trusted-users update failed"
+      {{ else -}}
+      sudo sed -i "s/^trusted-users.*/& $(whoami)/" /etc/nix/nix.conf 2>/dev/null && echo "[nix] ✓ trusted-users updated" || echo "[nix] ⚠ trusted-users update failed"
+      {{ end -}}
+    else
+      echo "trusted-users = root $(whoami)" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && echo "[nix] ✓ trusted-users added" || echo "[nix] ⚠ trusted-users add failed"
+    fi
+    NIX_CONF_CHANGED=true
+  else
+    echo "[nix] ✓ trusted-users already configured"
+  fi
+
+  # Ensure substituters at daemon level
+  if ! grep -q "mirrors.tuna" /etc/nix/nix.conf 2>/dev/null; then
+    echo "substituters = ${NIX_SUBSTITUTERS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && echo "[nix] ✓ substituters added to /etc/nix/nix.conf" || echo "[nix] ⚠ substituters add failed"
+    NIX_CONF_CHANGED=true
+  else
+    echo "[nix] ✓ substituters already in /etc/nix/nix.conf"
+  fi
+
+  # Ensure trusted-public-keys at daemon level
+  if ! grep -q "cache.nixos.org-1" /etc/nix/nix.conf 2>/dev/null; then
+    echo "trusted-public-keys = ${NIX_TRUSTED_KEYS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && echo "[nix] ✓ trusted-public-keys added to /etc/nix/nix.conf" || echo "[nix] ⚠ trusted-public-keys add failed"
+    NIX_CONF_CHANGED=true
+  else
+    echo "[nix] ✓ trusted-public-keys already in /etc/nix/nix.conf"
+  fi
 fi
 
 # Restart Nix daemon if config changed (required for daemon to re-read nix.conf)
@@ -86,7 +114,7 @@ if command -v nix &>/dev/null; then
   . /etc/profile.d/nix.sh 2>/dev/null || . "$HOME/.nix-profile/etc/profile.d/nix.sh" 2>/dev/null || true
   echo "[nix-hm] switching..."
   cd "{{ .chezmoi.workingTree }}"
-  if nix run --extra-experimental-features "nix-command flakes" home-manager -- switch --flake ".#{{ .username }}@{{ .hostname }}" --impure 2>&1; then
+  if nix run --accept-flake-config --extra-experimental-features "nix-command flakes" home-manager -- switch --flake ".#{{ .username }}@{{ .hostname }}" --impure 2>&1; then
     echo "[nix-hm] ✓ done"
   else
     echo "[nix-hm] ⚠ home-manager switch failed"

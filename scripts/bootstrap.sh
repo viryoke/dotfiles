@@ -136,29 +136,51 @@ if command -v nix &>/dev/null; then
   echo "Nix $(nix --version)"
 fi
 
-# Configure trusted-users in system-level nix.conf
-# Required for single-user Nix: custom substituters are rejected unless the
-# user is in the trusted-users list at the daemon level (/etc/nix/nix.conf).
-# Without this, every Nix command spams "ignoring untrusted substituter" warnings.
+# Configure system-level /etc/nix/nix.conf (daemon level — always respected)
+# substituters and trusted-public-keys must be here because they are restricted
+# settings in user-level ~/.config/nix/nix.conf (require trusted-users).
+NIX_SUBSTITUTERS="https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org"
+NIX_TRUSTED_KEYS="cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+
 if [ ! -f /etc/nix/nix.conf ]; then
-  # On macOS single-user installs, /etc/nix/nix.conf may not exist — create it
   sudo mkdir -p /etc/nix
-  echo "trusted-users = root $USER" | sudo tee /etc/nix/nix.conf > /dev/null 2>&1 && \
-    echo "Created /etc/nix/nix.conf with trusted-users = root $USER"
-elif grep -q "trusted-users" /etc/nix/nix.conf 2>/dev/null; then
-  # trusted-users already exists — check if current user is listed
+  sudo tee /etc/nix/nix.conf > /dev/null 2>&1 << SYSCONF
+trusted-users = root $USER
+substituters = ${NIX_SUBSTITUTERS}
+trusted-public-keys = ${NIX_TRUSTED_KEYS}
+SYSCONF
+  echo "Created /etc/nix/nix.conf (trusted-users + substituters + keys)"
+else
   if ! grep -q "trusted-users.*$USER" /etc/nix/nix.conf 2>/dev/null; then
-    echo "⚠ $USER not in trusted-users. Fix:"
-    echo "  sudo sed -i '' 's/^trusted-users.*/& $USER/' /etc/nix/nix.conf"
+    if grep -q "trusted-users" /etc/nix/nix.conf 2>/dev/null; then
+      echo "⚠ $USER not in trusted-users. Fix:"
+      echo "  sudo sed -i '' 's/^trusted-users.*/& $USER/' /etc/nix/nix.conf"
+    else
+      echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && \
+        echo "Added trusted-users = root $USER to /etc/nix/nix.conf"
+    fi
+  fi
+  if ! grep -q "mirrors.tuna" /etc/nix/nix.conf 2>/dev/null; then
+    echo "substituters = ${NIX_SUBSTITUTERS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
+    echo "Added substituters to /etc/nix/nix.conf"
+  fi
+  if ! grep -q "cache.nixos.org-1" /etc/nix/nix.conf 2>/dev/null; then
+    echo "trusted-public-keys = ${NIX_TRUSTED_KEYS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
+    echo "Added trusted-public-keys to /etc/nix/nix.conf"
+  fi
+fi
+
+# Restart Nix daemon to pick up /etc/nix/nix.conf changes (macOS + Linux)
+if [ "$OS" = "darwin" ]; then
+  if launchctl print system/org.nixos.nix-daemon &>/dev/null; then
+    sudo launchctl kickstart -k system/org.nixos.nix-daemon 2>/dev/null && echo "Nix daemon restarted" || echo "⚠ daemon restart failed"
   fi
 else
-  # Append trusted-users
-  echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && \
-    echo "Added trusted-users = root $USER to /etc/nix/nix.conf"
+  if systemctl is-active --quiet nix-daemon.service 2>/dev/null; then
+    sudo systemctl restart nix-daemon.service 2>/dev/null && echo "Nix daemon restarted" || echo "⚠ daemon restart failed"
+  fi
 fi
 echo ""
-
-# --- Phase 4: Clone Repository ---
 echo "--- Phase 4: Clone Repository ---"
 if [ -d "$DOTFILES_DIR/.git" ]; then
   echo "Repository already exists at $DOTFILES_DIR, pulling latest..."
@@ -192,9 +214,9 @@ if command -v nix &>/dev/null; then
   echo "Running home-manager switch..."
   cd "$DOTFILES_DIR"
   chezmoi execute-template '{{ .username }}@{{ .hostname }}' | xargs -I{} \
-    nix run home-manager -- switch --flake ".#{}" --impure || {
+    nix run --accept-flake-config home-manager -- switch --flake ".#{}" --impure || {
     echo "WARNING: home-manager switch failed. Run manually:"
-    echo "  cd ~/dotfiles && nix run home-manager -- switch --flake \".#\$(chezmoi execute-template '{{ .username }}@{{ .hostname }}')\" --impure"
+    echo "  cd ~/dotfiles && nix run --accept-flake-config home-manager -- switch --flake \".#\$(chezmoi execute-template '{{ .username }}@{{ .hostname }}')\" --impure"
   }
 fi
 echo ""
