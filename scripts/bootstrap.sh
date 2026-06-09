@@ -139,7 +139,7 @@ fi
 # Configure system-level /etc/nix/nix.conf (daemon level — always respected)
 # Uses sed to replace existing lines (not grep+append) so wrong values get corrected.
 NIX_SUBSTITUTERS="https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org"
-NIX_TRUSTED_KEYS="cache.nixos.org-1:6NCHdD59X431o0gWypbMrAERkbvX7kpksj7lCDEz6eI="
+NIX_TRUSTED_KEYS="cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
 
 if [ ! -f /etc/nix/nix.conf ]; then
   sudo mkdir -p /etc/nix
