@@ -5,16 +5,13 @@ echo "=== Installing Linux packages ==="
 
 if command -v pacman &>/dev/null; then
   echo "Installing pacman packages..."
-  # --ask=4: if a package conflicts with an installed one, keep the existing
-  # --noconfirm: auto-confirm normal install prompts
-  # || true: don't abort if a package fails
-  sudo pacman -S --needed --noconfirm --ask=4 \
+  sudo pacman -S --needed --noconfirm \
     {{ range .packages.linux.pacman }}{{ . | quote }} {{ end }} || true
 
   {{ if eq .chezmoi.arch "amd64" }}
   {{ if .packages.linux.pacman_amd64 }}
   echo "Installing amd64-specific pacman packages..."
-  sudo pacman -S --needed --noconfirm --ask=4 \
+  sudo pacman -S --needed --noconfirm \
     {{ range .packages.linux.pacman_amd64 }}{{ . | quote }} {{ end }} || true
   {{ end }}
   {{ end }}
@@ -47,4 +44,6 @@ if command -v flatpak &>/dev/null; then
 fi
 
 echo "=== Linux packages installation complete ==="
+
+exit 0
 {{ end -}}
