@@ -16,7 +16,8 @@ background-opacity = 0.95
 cursor-style = block
 cursor-style-blink = true
 
-shell-integration = detect
+command = /usr/bin/zsh
+shell-integration = zsh
 
 {{ if eq .chezmoi.os "darwin" -}}
 # macOS: Cmd (super) based keybinds
