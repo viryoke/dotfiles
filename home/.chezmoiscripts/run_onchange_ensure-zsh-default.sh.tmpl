@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Ensure zsh is the default shell
+ZSH_PATH="$(command -v zsh 2>/dev/null)"
+if [ -z "$ZSH_PATH" ]; then
+  echo "WARNING: zsh not found, skipping default shell change"
+  exit 0
+fi
+
+{{ if eq .chezmoi.os "linux" }}
+CURRENT_SHELL=$(getent passwd "$USER" 2>/dev/null | cut -d: -f7)
+if [ "$CURRENT_SHELL" != "$ZSH_PATH" ]; then
+  # Ensure zsh is in /etc/shells
+  if ! grep -q "$ZSH_PATH" /etc/shells 2>/dev/null; then
+    echo "$ZSH_PATH" | sudo tee -a /etc/shells > /dev/null
+  fi
+  chsh -s "$ZSH_PATH" && echo "Default shell changed to zsh" || echo "Failed to change shell, run: sudo chsh -s $ZSH_PATH $USER"
+else
+  echo "zsh is already the default shell"
+fi
+{{ else if eq .chezmoi.os "darwin" }}
+CURRENT_SHELL=$(dscl . -read /Users/"$USER" UserShell 2>/dev/null | awk '{print $2}')
+if [ "$CURRENT_SHELL" != "$ZSH_PATH" ]; then
+  chsh -s "$ZSH_PATH" && echo "Default shell changed to zsh" || echo "Failed to change shell, run: sudo chsh -s $ZSH_PATH $USER"
+else
+  echo "zsh is already the default shell"
+fi
+{{ end }}
