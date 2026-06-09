@@ -4,6 +4,11 @@ set -euo pipefail
 # Install claude-code via npm (global, user-local prefix)
 # Nix store is read-only, so we use ~/.npm-global
 
+# Source Nix profile so npm is available after home-manager deploy
+if [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
+  . "$HOME/.nix-profile/etc/profile.d/nix.sh"
+fi
+
 if command -v npm &>/dev/null; then
   mkdir -p "$HOME/.npm-global"
   npm config set prefix "$HOME/.npm-global"
