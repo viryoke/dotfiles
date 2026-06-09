@@ -14,6 +14,7 @@
     htop
     btop
     lazygit
+    gh
     delta
     age
   ] ++ lib.optionals isLinux [
