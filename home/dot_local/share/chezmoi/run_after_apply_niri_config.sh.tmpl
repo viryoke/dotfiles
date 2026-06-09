@@ -1,0 +1,27 @@
+{{ if eq .chezmoi.os "linux" -}}
+#!/usr/bin/env bash
+# Link niri config from chezmoi-managed source (~/.local/share/niri)
+# Only applies when niri is installed on the system.
+
+set -euo pipefail
+
+SRC="$HOME/.local/share/niri"
+DST="$HOME/.config/niri"
+
+# niri not installed — skip entirely
+command -v niri >/dev/null 2>&1 || exit 0
+
+# already the correct symlink — nothing to do
+if [ -L "$DST" ] && [ "$(readlink "$DST")" = "$SRC" ]; then
+  exit 0
+fi
+
+# back up existing regular directory/files
+if [ -e "$DST" ]; then
+  echo "[chezmoi] backing up $DST → ${DST}.bak"
+  mv "$DST" "${DST}.bak"
+fi
+
+ln -s "$SRC" "$DST"
+echo "[chezmoi] linked $DST → $SRC"
+{{ end -}}
