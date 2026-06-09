@@ -143,7 +143,7 @@ MERGE
   fi
 
   # 4. Inject subscription from agenix secret (if available)
-  AGENIX_SECRET="$HOME/.local/share/agenix/clash_subscription"
+  AGENIX_SECRET="$XDG_RUNTIME_DIR/agenix/clash_subscription"
   if [ -f "$AGENIX_SECRET" ] && [ ! -f "$DATA_DIR/profiles.yaml" ]; then
     SUB_URL="$(cat "$AGENIX_SECRET")"
     if [ -n "$SUB_URL" ]; then
