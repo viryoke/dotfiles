@@ -78,16 +78,24 @@ check "git user.name" "git config user.name"
 check "git user.email" "git config user.email"
 warn "SSH key exists" "test -f ~/.ssh/id_ed25519"
 
+OS="$(uname -s)"
+
 echo ""
-echo "--- Wayland Utilities ---"
-warn "rofi-wayland" "command -v rofi"
-warn "cliphist" "command -v cliphist"
-warn "grim" "command -v grim"
-warn "slurp" "command -v slurp"
-warn "mako" "command -v mako"
-warn "wlogout" "command -v wlogout"
-warn "swww" "command -v swww"
-warn "fcitx5" "command -v fcitx5"
+if [ "$OS" = "Linux" ]; then
+  echo "--- Wayland Utilities (Linux) ---"
+  warn "rofi-wayland" "command -v rofi"
+  warn "cliphist" "command -v cliphist"
+  warn "grim" "command -v grim"
+  warn "slurp" "command -v slurp"
+  warn "mako" "command -v mako"
+  warn "wlogout" "command -v wlogout"
+  warn "swww" "command -v swww"
+  warn "fcitx5" "command -v fcitx5"
+elif [ "$OS" = "Darwin" ]; then
+  echo "--- macOS Utilities ---"
+  warn "homebrew" "command -v brew"
+  warn "xcode cli tools" "xcode-select -p"
+fi
 
 echo ""
 echo "--- chezmoi Status ---"

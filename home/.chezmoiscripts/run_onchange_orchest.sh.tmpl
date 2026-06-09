@@ -30,6 +30,7 @@ substituters = https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://m
 NIXCONF
 
 # Ensure trusted-users in system /etc/nix/nix.conf (suppresses "untrusted substituter" warnings)
+NIX_CONF_CHANGED=false
 if [ -f /etc/nix/nix.conf ]; then
   if ! grep -q "trusted-users.*$(whoami)" /etc/nix/nix.conf 2>/dev/null; then
     echo "[nix] adding trusted-users to /etc/nix/nix.conf (needs sudo)..."
@@ -42,9 +43,23 @@ if [ -f /etc/nix/nix.conf ]; then
     else
       echo "trusted-users = root $(whoami)" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && echo "[nix] ✓ trusted-users added" || echo "[nix] ⚠ trusted-users add failed"
     fi
+    NIX_CONF_CHANGED=true
   else
     echo "[nix] ✓ trusted-users already configured"
   fi
+fi
+
+# Restart Nix daemon if config changed (required for daemon to re-read nix.conf)
+if [ "$NIX_CONF_CHANGED" = true ]; then
+  {{ if eq .chezmoi.os "darwin" -}}
+  if launchctl print system/org.nixos.nix-daemon &>/dev/null; then
+    sudo launchctl kickstart -k system/org.nixos.nix-daemon 2>/dev/null && echo "[nix] ✓ daemon restarted" || echo "[nix] ⚠ daemon restart failed"
+  fi
+  {{ else -}}
+  if systemctl is-active --quiet nix-daemon.service 2>/dev/null; then
+    sudo systemctl restart nix-daemon.service 2>/dev/null && echo "[nix] ✓ daemon restarted" || echo "[nix] ⚠ daemon restart failed"
+  fi
+  {{ end -}}
 fi
 echo "[mirrors] ✓ Nix: TUNA + SJTU"
 
