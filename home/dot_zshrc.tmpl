@@ -22,6 +22,12 @@ if [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
   . "$HOME/.nix-profile/etc/profile.d/nix.sh"
 fi
 
+{{ if eq .chezmoi.os "linux" }}
+# Ensure system data dirs are in XDG_DATA_DIRS (flatpak may set it before nix.sh,
+# causing nix.sh to skip /usr/share — breaks GSettings, xdg-desktop-portal, icons, etc.)
+export XDG_DATA_DIRS="/usr/local/share:/usr/share:${XDG_DATA_DIRS:-}"
+{{ end }}
+
 # === Locale ===
 export LANG=en_US.UTF-8
 export LC_CTYPE=zh_CN.UTF-8
