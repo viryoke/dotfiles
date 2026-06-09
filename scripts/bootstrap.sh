@@ -137,8 +137,7 @@ if command -v nix &>/dev/null; then
 fi
 
 # Configure system-level /etc/nix/nix.conf (daemon level — always respected)
-# substituters and trusted-public-keys must be here because they are restricted
-# settings in user-level ~/.config/nix/nix.conf (require trusted-users).
+# Uses sed to replace existing lines (not grep+append) so wrong values get corrected.
 NIX_SUBSTITUTERS="https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org"
 NIX_TRUSTED_KEYS="cache.nixos.org-1:6NCHdD59X431o0gWypbMrAERkbvX7kpksj7lCDEz6eI="
 
@@ -151,22 +150,31 @@ trusted-public-keys = ${NIX_TRUSTED_KEYS}
 SYSCONF
   echo "Created /etc/nix/nix.conf (trusted-users + substituters + keys)"
 else
+  # trusted-users: append user if not already present
   if ! grep -q "trusted-users.*$USER" /etc/nix/nix.conf 2>/dev/null; then
-    if grep -q "trusted-users" /etc/nix/nix.conf 2>/dev/null; then
-      echo "⚠ $USER not in trusted-users. Fix:"
-      echo "  sudo sed -i '' 's/^trusted-users.*/& $USER/' /etc/nix/nix.conf"
+    if grep -q "^trusted-users" /etc/nix/nix.conf 2>/dev/null; then
+      sudo sed -i '' "s/^trusted-users.*/& $USER/" /etc/nix/nix.conf 2>/dev/null && \
+        echo "Updated trusted-users (added $USER)"
     else
       echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && \
-        echo "Added trusted-users = root $USER to /etc/nix/nix.conf"
+        echo "Added trusted-users = root $USER"
     fi
   fi
-  if ! grep -q "mirrors.tuna" /etc/nix/nix.conf 2>/dev/null; then
-    echo "substituters = ${NIX_SUBSTITUTERS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
-    echo "Added substituters to /etc/nix/nix.conf"
+  # substituters: replace existing line or append
+  if grep -q "^substituters" /etc/nix/nix.conf 2>/dev/null; then
+    sudo sed -i '' "s|^substituters.*|substituters = ${NIX_SUBSTITUTERS}|" /etc/nix/nix.conf 2>/dev/null && \
+      echo "Updated substituters"
+  else
+    echo "substituters = ${NIX_SUBSTITUTERS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && \
+      echo "Added substituters"
   fi
-  if ! grep -q "cache.nixos.org-1" /etc/nix/nix.conf 2>/dev/null; then
-    echo "trusted-public-keys = ${NIX_TRUSTED_KEYS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
-    echo "Added trusted-public-keys to /etc/nix/nix.conf"
+  # trusted-public-keys: replace existing line or append
+  if grep -q "^trusted-public-keys" /etc/nix/nix.conf 2>/dev/null; then
+    sudo sed -i '' "s|^trusted-public-keys.*|trusted-public-keys = ${NIX_TRUSTED_KEYS}|" /etc/nix/nix.conf 2>/dev/null && \
+      echo "Updated trusted-public-keys"
+  else
+    echo "trusted-public-keys = ${NIX_TRUSTED_KEYS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && \
+      echo "Added trusted-public-keys"
   fi
 fi
 

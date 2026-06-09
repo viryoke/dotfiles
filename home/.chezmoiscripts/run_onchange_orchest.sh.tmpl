@@ -33,7 +33,7 @@ trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAERkbvX7kpksj7lCDEz
 NIXCONF
 
 # ── System-level /etc/nix/nix.conf (daemon-level, always respected) ──
-# This is the authoritative place for restricted settings like substituters.
+# Uses sed to replace existing lines (not grep+append) so wrong values get corrected.
 NIX_CONF_CHANGED=false
 NIX_SUBSTITUTERS="https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org"
 NIX_TRUSTED_KEYS="cache.nixos.org-1:6NCHdD59X431o0gWypbMrAERkbvX7kpksj7lCDEz6eI="
@@ -45,39 +45,44 @@ trusted-users = root $(whoami)
 substituters = ${NIX_SUBSTITUTERS}
 trusted-public-keys = ${NIX_TRUSTED_KEYS}
 SYSCONF
-  echo "[nix] ✓ /etc/nix/nix.conf created (trusted-users + substituters + keys)" && NIX_CONF_CHANGED=true || echo "[nix] ⚠ /etc/nix/nix.conf creation failed"
+  echo "[nix] ✓ /etc/nix/nix.conf created" && NIX_CONF_CHANGED=true || echo "[nix] ⚠ creation failed"
 else
-  # Ensure trusted-users
+  # trusted-users
   if ! grep -q "trusted-users.*$(whoami)" /etc/nix/nix.conf 2>/dev/null; then
-    echo "[nix] adding trusted-users to /etc/nix/nix.conf (needs sudo)..."
-    if grep -q "trusted-users" /etc/nix/nix.conf 2>/dev/null; then
+    if grep -q "^trusted-users" /etc/nix/nix.conf 2>/dev/null; then
       {{ if eq .chezmoi.os "darwin" -}}
-      sudo sed -i '' "s/^trusted-users.*/& $(whoami)/" /etc/nix/nix.conf 2>/dev/null && echo "[nix] ✓ trusted-users updated" || echo "[nix] ⚠ trusted-users update failed"
+      sudo sed -i '' "s/^trusted-users.*/& $(whoami)/" /etc/nix/nix.conf 2>/dev/null
       {{ else -}}
-      sudo sed -i "s/^trusted-users.*/& $(whoami)/" /etc/nix/nix.conf 2>/dev/null && echo "[nix] ✓ trusted-users updated" || echo "[nix] ⚠ trusted-users update failed"
+      sudo sed -i "s/^trusted-users.*/& $(whoami)/" /etc/nix/nix.conf 2>/dev/null
       {{ end -}}
     else
-      echo "trusted-users = root $(whoami)" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && echo "[nix] ✓ trusted-users added" || echo "[nix] ⚠ trusted-users add failed"
+      echo "trusted-users = root $(whoami)" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
     fi
-    NIX_CONF_CHANGED=true
-  else
-    echo "[nix] ✓ trusted-users already configured"
+    echo "[nix] ✓ trusted-users updated" && NIX_CONF_CHANGED=true
   fi
-
-  # Ensure substituters at daemon level
-  if ! grep -q "mirrors.tuna" /etc/nix/nix.conf 2>/dev/null; then
-    echo "substituters = ${NIX_SUBSTITUTERS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && echo "[nix] ✓ substituters added to /etc/nix/nix.conf" || echo "[nix] ⚠ substituters add failed"
-    NIX_CONF_CHANGED=true
+  # substituters: sed replace or append
+  if grep -q "^substituters" /etc/nix/nix.conf 2>/dev/null; then
+    {{ if eq .chezmoi.os "darwin" -}}
+    sudo sed -i '' "s|^substituters.*|substituters = ${NIX_SUBSTITUTERS}|" /etc/nix/nix.conf 2>/dev/null
+    {{ else -}}
+    sudo sed -i "s|^substituters.*|substituters = ${NIX_SUBSTITUTERS}|" /etc/nix/nix.conf 2>/dev/null
+    {{ end -}}
+    echo "[nix] ✓ substituters updated" && NIX_CONF_CHANGED=true
   else
-    echo "[nix] ✓ substituters already in /etc/nix/nix.conf"
+    echo "substituters = ${NIX_SUBSTITUTERS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
+    echo "[nix] ✓ substituters added" && NIX_CONF_CHANGED=true
   fi
-
-  # Ensure trusted-public-keys at daemon level
-  if ! grep -q "cache.nixos.org-1" /etc/nix/nix.conf 2>/dev/null; then
-    echo "trusted-public-keys = ${NIX_TRUSTED_KEYS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && echo "[nix] ✓ trusted-public-keys added to /etc/nix/nix.conf" || echo "[nix] ⚠ trusted-public-keys add failed"
-    NIX_CONF_CHANGED=true
+  # trusted-public-keys: sed replace or append
+  if grep -q "^trusted-public-keys" /etc/nix/nix.conf 2>/dev/null; then
+    {{ if eq .chezmoi.os "darwin" -}}
+    sudo sed -i '' "s|^trusted-public-keys.*|trusted-public-keys = ${NIX_TRUSTED_KEYS}|" /etc/nix/nix.conf 2>/dev/null
+    {{ else -}}
+    sudo sed -i "s|^trusted-public-keys.*|trusted-public-keys = ${NIX_TRUSTED_KEYS}|" /etc/nix/nix.conf 2>/dev/null
+    {{ end -}}
+    echo "[nix] ✓ trusted-public-keys updated" && NIX_CONF_CHANGED=true
   else
-    echo "[nix] ✓ trusted-public-keys already in /etc/nix/nix.conf"
+    echo "trusted-public-keys = ${NIX_TRUSTED_KEYS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
+    echo "[nix] ✓ trusted-public-keys added" && NIX_CONF_CHANGED=true
   fi
 fi
 
