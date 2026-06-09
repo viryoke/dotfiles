@@ -41,32 +41,41 @@ if [ -n "$EXISTING_CONFIG" ]; then
   echo "Skipping user configuration (delete the file to reconfigure)"
   echo ""
 else
-  echo "Please provide the following information:"
+  echo "--- Auto-detecting configuration ---"
+
+  # Username: auto-detect from $USER
+  USERNAME="$USER"
+  echo "  Username:  $USERNAME (auto-detected)"
+
+  # Git name: try git config, prompt if missing
+  GIT_NAME=$(git config --global user.name 2>/dev/null || echo "")
+  if [ -z "$GIT_NAME" ]; then
+    read -rp "Git user.name: " GIT_NAME < /dev/tty
+  else
+    echo "  Git name:  $GIT_NAME (from git config)"
+  fi
+
+  # Git email: try git config, prompt if missing
+  GIT_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
+  if [ -z "$GIT_EMAIL" ]; then
+    read -rp "Git user.email: " GIT_EMAIL < /dev/tty
+  else
+    echo "  Git email: $GIT_EMAIL (from git config)"
+  fi
+
+  # Hostname: show detected value and available configs, let user confirm
   echo ""
-
-  # Username (used for flake.nix homeConfigurations key)
-  read -rp "Username [${USER}]: " USERNAME < /dev/tty
-  USERNAME="${USERNAME:-$USER}"
-
-  # Git name
-  GIT_NAME_DEFAULT=$(git config --global user.name 2>/dev/null || echo "")
-  read -rp "Git user.name [${GIT_NAME_DEFAULT}]: " GIT_NAME < /dev/tty
-  GIT_NAME="${GIT_NAME:-$GIT_NAME_DEFAULT}"
-
-  # Git email
-  GIT_EMAIL_DEFAULT=$(git config --global user.email 2>/dev/null || echo "")
-  read -rp "Git user.email [${GIT_EMAIL_DEFAULT}]: " GIT_EMAIL < /dev/tty
-  GIT_EMAIL="${GIT_EMAIL:-$GIT_EMAIL_DEFAULT}"
-
-  # Hostname (used for flake.nix homeConfigurations key)
+  echo "Hostname is used to select the Nix home-manager configuration."
+  echo "Detected system hostname: $RAW_HOSTNAME"
+  echo "Available configurations in flake.nix:"
+  echo "  - cachyos-desktop (CachyOS Linux)"
+  echo "  - macbook (macOS)"
   echo ""
-  echo "Hostname is used to select the correct Nix configuration in flake.nix."
-  echo "Available configurations in flake.nix: cachyos-desktop, macbook"
-  read -rp "Hostname [${RAW_HOSTNAME}]: " HOSTNAME < /dev/tty
+  read -rp "Which configuration to use? [cachyos-desktop/macbook]: " HOSTNAME < /dev/tty
   HOSTNAME="${HOSTNAME:-$RAW_HOSTNAME}"
 
   echo ""
-  echo "Summary:"
+  echo "Configuration summary:"
   echo "  Username:  $USERNAME"
   echo "  Git name:  $GIT_NAME"
   echo "  Git email: $GIT_EMAIL"
