@@ -5,7 +5,7 @@
 
 set -euo pipefail
 
-DOTFILES_DIR="${HOME}/dotfiles"
+DOTFILES_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 PACKAGES_YAML="${DOTFILES_DIR}/home/.chezmoidata/packages.yaml"
 
 if [ ! -f "$PACKAGES_YAML" ]; then

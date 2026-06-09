@@ -91,7 +91,7 @@ warn "fcitx5" "command -v fcitx5"
 
 echo ""
 echo "--- chezmoi Status ---"
-check "chezmoi source dir" "test -d ~/.local/share/chezmoi"
+check "chezmoi source dir" "test -d ~/dotfiles/home"
 if command -v chezmoi &>/dev/null; then
   DIFF_COUNT=$(chezmoi diff 2>/dev/null | grep -c '^diff' || true)
   if [ "$DIFF_COUNT" -eq 0 ]; then

@@ -14,17 +14,16 @@ width=360
 height=200
 default-timeout=5000
 max-visible=5
-group-by=app-name
 
 [summary~="Battery|Power"]
 border-color=#fb4934
 default-timeout=0
 
-[app-name="spotify"]
+[app-name~="(?i)spotify"]
 default-timeout=3000
 
-[app-name="mpv"]
+[app-name~="(?i)mpv"]
 default-timeout=3000
 
-[app-name="firefox"]
+[app-name~="(?i)firefox"]
 default-timeout=3000

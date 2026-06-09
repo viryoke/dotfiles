@@ -8,4 +8,6 @@
     main-ex:                     #d5c4a1ff;
     select-bg:                   #83a598ff;
     select-fg:                   #282828ff;
+
+    text-color:                  @main-fg;
 }

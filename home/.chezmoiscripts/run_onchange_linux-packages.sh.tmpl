@@ -1,4 +1,5 @@
 #!/bin/bash
+set -uo pipefail
 
 {{ if eq .chezmoi.os "linux" -}}
 echo "=== Installing Linux packages ==="

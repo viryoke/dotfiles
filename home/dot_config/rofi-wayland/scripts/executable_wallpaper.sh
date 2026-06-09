@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -uo pipefail
 # Wallpaper selector — managed by chezmoi
 # Browse wallpapers with rofi, apply with swww (Wayland-native)
 

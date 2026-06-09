@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -uo pipefail
 # Emoji picker — managed by chezmoi
 # Uses rofi-emoji plugin for Wayland emoji selection
 

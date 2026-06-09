@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -uo pipefail
 # Screenshot menu — managed by chezmoi
 # Uses grim + slurp for Wayland-native capture (Niri compatible)
 
