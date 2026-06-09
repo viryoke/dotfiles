@@ -22,6 +22,6 @@
   ] ++ lib.optionals isDarwin [
     m-cli
     coreutils
-    gnu-sed
+    gnused
   ];
 }
