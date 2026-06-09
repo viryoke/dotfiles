@@ -2,12 +2,7 @@ layout {
     pane size=1 borderless=true {
         plugin location="zellij:tab-bar"
     }
-    pane split_direction="vertical" {
-        pane size="80%"
-        pane size="20%" command="bash" start_suspended=false {
-            args "-c" "$HOME/.local/bin/system-monitor"
-        }
-    }
+    pane
     pane size=2 borderless=true {
         plugin location="zellij:status-bar"
     }

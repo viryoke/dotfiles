@@ -12,7 +12,7 @@ background-opacity = 0.95
 cursor-style = block
 cursor-style-blink = true
 
-shell-integration = zsh
+shell-integration = detect
 
 keybind = ctrl+shift+t=new_tab
 keybind = ctrl+shift+w=close_surface

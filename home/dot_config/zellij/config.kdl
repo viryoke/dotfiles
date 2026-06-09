@@ -1,6 +1,6 @@
 theme "gruvbox-material-dark"
 default_layout "default"
-mouse_mode false
+mouse_mode true
 on_force_close "detach"
 simplified_ui true
 disable_session_metadata true
