@@ -4,32 +4,35 @@
 echo "=== Installing Linux packages ==="
 
 if command -v pacman &>/dev/null; then
-  echo "Installing pacman packages..."
-  # --ignore: skip nvidia packages (CachyOS handles GPU drivers)
-  sudo pacman -S --needed --noconfirm \
-    --ignore nvidia-open-dkms,nvidia-dkms,nvidia,nvidia-open \
-    {{ range .packages.linux.pacman }}{{ . | quote }} {{ end }} || true
+  echo "Installing pacman packages one by one..."
+  {{ range .packages.linux.pacman -}}
+  echo "  → {{ . }}"
+  sudo pacman -S --needed --noconfirm "{{ . }}" 2>/dev/null || echo "  ⚠ skipped: {{ . }}"
+  {{ end }}
 
   {{ if eq .chezmoi.arch "amd64" }}
   {{ if .packages.linux.pacman_amd64 }}
-  echo "Installing amd64-specific pacman packages..."
-  sudo pacman -S --needed --noconfirm \
-    --ignore nvidia-open-dkms,nvidia-dkms,nvidia,nvidia-open \
-    {{ range .packages.linux.pacman_amd64 }}{{ . | quote }} {{ end }} || true
+  echo "Installing amd64-specific packages..."
+  {{ range .packages.linux.pacman_amd64 -}}
+  echo "  → {{ . }}"
+  sudo pacman -S --needed --noconfirm "{{ . }}" 2>/dev/null || echo "  ⚠ skipped: {{ . }}"
+  {{ end }}
   {{ end }}
   {{ end }}
 fi
 
 {{ if .packages.linux.aur }}
 if command -v yay &>/dev/null; then
-  echo "Installing AUR packages via yay..."
+  echo "Installing AUR packages..."
   {{ range .packages.linux.aur -}}
-  yay -S --needed --noconfirm {{ . | quote }} || true
+  echo "  → {{ . }}"
+  yay -S --needed --noconfirm "{{ . }}" || echo "  ⚠ skipped: {{ . }}"
   {{ end }}
 elif command -v paru &>/dev/null; then
-  echo "Installing AUR packages via paru..."
+  echo "Installing AUR packages..."
   {{ range .packages.linux.aur -}}
-  paru -S --needed --noconfirm {{ . | quote }} || true
+  echo "  → {{ . }}"
+  paru -S --needed --noconfirm "{{ . }}" || echo "  ⚠ skipped: {{ . }}"
   {{ end }}
 else
   echo "WARNING: No AUR helper found (yay/paru). Skipping AUR packages."
@@ -41,12 +44,10 @@ if command -v flatpak &>/dev/null; then
   flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
   {{ range .packages.linux.flatpak -}}
-  echo "Installing {{ . }}..."
-  flatpak install --user -y flathub {{ . | quote }} || true
+  echo "  → {{ . }}"
+  flatpak install --user -y flathub {{ . | quote }} || echo "  ⚠ skipped: {{ . }}"
   {{ end }}
 fi
 
 echo "=== Linux packages installation complete ==="
-
-exit 0
 {{ end -}}
