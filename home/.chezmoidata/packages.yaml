@@ -37,7 +37,6 @@ packages:
       - "net.ankiweb.Anki"
       - "md.obsidian.Obsidian"
     aur:
-      - "clash-verge-rev-bin"
       - "baidunetdisk-bin"
   darwin:
     brews:

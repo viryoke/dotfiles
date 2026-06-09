@@ -1,14 +1,12 @@
 let
-  viryoke = "ssh-ed25519 AAAA...REPLACE_WITH_ACTUAL_PUBLIC_KEY... viryoke@desktop";
-  cachyos-desktop = "ssh-ed25519 AAAA...REPLACE_WITH_ACTUAL_PUBLIC_KEY... root@cachyos-desktop";
-  macbook = "ssh-ed25519 AAAA...REPLACE_WITH_ACTUAL_PUBLIC_KEY... viryoke@macbook";
+  # cachyos-desktop user key
+  viryoke-desktop = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINDP1zmZLvEp8TTXCr3NLvS7VRUJcV9uXgn/H+Qs3gEH viryoke@cachyos-desktop";
 
-  allKeys = [ viryoke cachyos-desktop macbook ];
+  # TODO: add macbook key later
+  # viryoke-macbook = "ssh-ed25519 AAAA... viryoke@macbook";
+
+  allKeys = [ viryoke-desktop ];
 in
 {
-  "ssh_id_ed25519.age".publicKeys = allKeys;
-  "openai_api_key.age".publicKeys = allKeys;
-  "github_token.age".publicKeys = allKeys;
-  "tailscale_auth_key.age".publicKeys = allKeys;
   "clash_subscription.age".publicKeys = allKeys;
 }

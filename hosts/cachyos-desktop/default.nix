@@ -16,6 +16,8 @@
     ../../modules/shared/ai-learning.nix
     ../../modules/shared/hermes-agent.nix
     ../../modules/linux/packages.nix
+    ../../modules/linux/clash-verge.nix
+    ../../modules/linux/secrets.nix
   ];
 
   nixpkgs.config.allowUnfree = true;

@@ -13,17 +13,17 @@ echo "Hostname: {{ .chezmoi.hostname }}"
 # Generate locales
 if command -v locale-gen &>/dev/null || [ -f /etc/locale.gen ]; then
   echo "Generating locales..."
-  grep -q "en_US.UTF-8" /etc/locale.gen 2>/dev/null || echo "en_US.UTF-8 UTF-8" | sudo tee -a /etc/locale.gen
-  grep -q "zh_CN.UTF-8" /etc/locale.gen 2>/dev/null || echo "zh_CN.UTF-8 UTF-8" | sudo tee -a /etc/locale.gen
+  grep -q "en_US.UTF-8" /etc/locale.gen 2>/dev/null || echo "en_US.UTF-8 UTF-8" | sudo tee -a /etc/locale.gen 2>/dev/null || true
+  grep -q "zh_CN.UTF-8" /etc/locale.gen 2>/dev/null || echo "zh_CN.UTF-8 UTF-8" | sudo tee -a /etc/locale.gen 2>/dev/null || true
   sudo locale-gen 2>/dev/null || true
-  echo "LANG=en_US.UTF-8" | sudo tee /etc/locale.conf > /dev/null
+  echo "LANG=en_US.UTF-8" | sudo tee /etc/locale.conf > /dev/null 2>/dev/null || true
 fi
 
 # Add zsh to /etc/shells
 if command -v zsh &>/dev/null; then
   ZSH_PATH="$(which zsh)"
   if ! grep -q "$ZSH_PATH" /etc/shells 2>/dev/null; then
-    echo "$ZSH_PATH" | sudo tee -a /etc/shells > /dev/null
+    echo "$ZSH_PATH" | sudo tee -a /etc/shells > /dev/null 2>/dev/null || true
   fi
 fi
 
@@ -32,6 +32,15 @@ if ! command -v nix &>/dev/null; then
   sh <(curl -L https://nixos.org/nix/install) --no-daemon
   . /etc/profile.d/nix.sh 2>/dev/null || . "$HOME/.nix-profile/etc/profile.d/nix.sh" 2>/dev/null || true
 fi
+
+# Configure Nix binary cache mirrors (China)
+mkdir -p "$HOME/.config/nix"
+cat > "$HOME/.config/nix/nix.conf" << 'EOF'
+experimental-features = nix-command flakes
+substituters = https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org
+trusted-substituters = https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store
+EOF
+echo "  Nix mirrors configured (TUNA/SJTU)"
 {{ else if eq .chezmoi.os "darwin" }}
 if ! xcode-select -p &>/dev/null; then
   echo "Installing Xcode CLI tools..."
@@ -50,6 +59,15 @@ if ! command -v nix &>/dev/null; then
   sh <(curl -L https://nixos.org/nix/install) --no-daemon
   . "$HOME/.nix-profile/etc/profile.d/nix.sh" 2>/dev/null || true
 fi
+
+# Configure Nix binary cache mirrors (China)
+mkdir -p "$HOME/.config/nix"
+cat > "$HOME/.config/nix/nix.conf" << 'EOF'
+experimental-features = nix-command flakes
+substituters = https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org
+trusted-substituters = https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store
+EOF
+echo "  Nix mirrors configured (TUNA/SJTU)"
 {{ end }}
 
 echo "=== Prerequisites check complete ==="

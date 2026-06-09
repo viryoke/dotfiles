@@ -5,8 +5,8 @@ result-*
 # chezmoi
 home/.chezmoiscripts/*.sh
 
-# Secrets (never commit plaintext)
-secrets/*.age
+# Secrets — .age files are encrypted and SHOULD be committed
+# Only plaintext secrets are ignored
 *.secret
 *.key
 

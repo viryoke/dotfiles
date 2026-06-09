@@ -1,0 +1,375 @@
+#!/bin/bash
+set -uo pipefail
+
+# ========================================
+# Dotfiles Orchestration Script
+# ========================================
+# Phase 1: Configure mirrors (fast, no network needed)
+# Phase 2: Nix HM + Clash Verge (serial, uses Nix mirrors)
+# Phase 3: Bulk package installs (parallel, uses proxy)
+# Phase 4: Post-install config (parallel)
+
+echo "========================================"
+echo "  Dotfiles Setup"
+echo "  OS: {{ .chezmoi.os }} | Arch: {{ .chezmoi.arch }}"
+echo "========================================"
+
+# ========================================
+# Phase 1: Configure Mirrors
+# ========================================
+echo ""
+echo "── Phase 1: Configuring mirrors ──"
+
+# Nix binary cache mirrors (China) — ensures nix downloads use domestic CDN
+mkdir -p "$HOME/.config/nix"
+cat > "$HOME/.config/nix/nix.conf" << 'NIXCONF'
+experimental-features = nix-command flakes
+substituters = https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org
+trusted-substituters = https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store
+NIXCONF
+echo "[mirrors] ✓ Nix: TUNA + SJTU"
+
+# npm mirror (China)
+if command -v npm &>/dev/null || command -v node &>/dev/null; then
+  npm config set registry https://registry.npmmirror.com 2>/dev/null
+  echo "[mirrors] ✓ npm: npmmirror"
+fi
+
+echo "── Phase 1 complete ──"
+
+# ========================================
+# Phase 2: Nix HM + Clash Verge (serial)
+# ========================================
+echo ""
+echo "── Phase 2: Nix home-manager + Clash Verge ──"
+
+# --- Nix Home Manager ---
+if command -v nix &>/dev/null; then
+  . /etc/profile.d/nix.sh 2>/dev/null || . "$HOME/.nix-profile/etc/profile.d/nix.sh" 2>/dev/null || true
+  echo "[nix-hm] switching..."
+  cd "{{ .chezmoi.workingTree }}"
+  if nix run --extra-experimental-features "nix-command flakes" home-manager -- switch --flake ".#{{ .username }}@{{ .hostname }}" --impure 2>&1; then
+    echo "[nix-hm] ✓ done"
+  else
+    echo "[nix-hm] ⚠ home-manager switch failed"
+  fi
+else
+  echo "[nix-hm] ⚠ nix not found, skipping"
+fi
+
+# Re-source Nix profile after switch (new packages available)
+. /etc/profile.d/nix.sh 2>/dev/null || . "$HOME/.nix-profile/etc/profile.d/nix.sh" 2>/dev/null || true
+
+{{ if eq .chezmoi.os "linux" -}}
+# --- Clash Verge: autostart + silent + TUN + subscription ---
+if command -v clash-verge &>/dev/null; then
+  echo "[clash-verge] configuring..."
+  DATA_DIR="$HOME/.local/share/io.github.clash-verge-rev.clash-verge-rev"
+
+  # 1. XDG Autostart
+  mkdir -p "$HOME/.config/autostart"
+  cat > "$HOME/.config/autostart/Clash Verge.desktop" << 'DESKTOP'
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Clash Verge
+Comment=Clash Verge startup
+Exec=/usr/bin/clash-verge
+StartupNotify=false
+Terminal=false
+DESKTOP
+
+  # 2. verge.yaml
+  mkdir -p "$DATA_DIR"
+  set_verge_key() {
+    local key="$1" val="$2" file="$DATA_DIR/verge.yaml"
+    if grep -q "^${key}:" "$file" 2>/dev/null; then
+      sed -i "s|^${key}:.*|${key}: ${val}|" "$file"
+    else
+      echo "${key}: ${val}" >> "$file"
+    fi
+  }
+
+  if [ ! -f "$DATA_DIR/verge.yaml" ]; then
+    cat > "$DATA_DIR/verge.yaml" << 'VERGE'
+# Clash Verge Config — bootstrapped by dotfiles
+language: en
+theme_mode: system
+enable_tun_mode: true
+enable_auto_launch: true
+enable_silent_start: true
+enable_system_proxy: false
+clash_core: verge-mihomo
+VERGE
+  else
+    set_verge_key "enable_silent_start" "true"
+    set_verge_key "enable_auto_launch" "true"
+    set_verge_key "enable_tun_mode" "true"
+    set_verge_key "enable_system_proxy" "false"
+  fi
+
+  # 3. Merge Profile: force TUN
+  PROFILES_DIR="$DATA_DIR/profiles"
+  mkdir -p "$PROFILES_DIR"
+
+  TUN_CONFIG="tun:
+  enable: true
+  stack: system
+  auto-route: true
+  auto-detect-interface: true
+  dns-hijack:
+    - any:53"
+
+  cat > "$PROFILES_DIR/Merge.yaml" << MERGE
+# Profile Enhancement Merge — force TUN mode
+# Managed by dotfiles
+
+${TUN_CONFIG}
+MERGE
+
+  # Patch subscription-specific merge profiles
+  if [ -f "$DATA_DIR/profiles.yaml" ]; then
+    awk '/^- uid:/{uid=$3; type=""; file=""} /^  type:/{type=$2} /^  file:/{file=$2} type=="merge" && file!="" && file!="Merge.yaml"{print file; type=""}' \
+      "$DATA_DIR/profiles.yaml" | while read -r merge_file; do
+      if [ -n "$merge_file" ]; then
+        cat > "$PROFILES_DIR/$merge_file" << MERGE
+# Profile Enhancement Merge — force TUN mode
+# Managed by dotfiles
+
+${TUN_CONFIG}
+MERGE
+      fi
+    done || true
+  fi
+
+  # 4. Inject subscription from agenix secret (if available)
+  AGENIX_SECRET="$HOME/.local/share/agenix/clash_subscription"
+  if [ -f "$AGENIX_SECRET" ] && [ ! -f "$DATA_DIR/profiles.yaml" ]; then
+    SUB_URL="$(cat "$AGENIX_SECRET")"
+    if [ -n "$SUB_URL" ]; then
+      cat > "$DATA_DIR/profiles.yaml" << SUBSCRIPTION
+- uid: dotfiles-sub
+  type: remote
+  name: MySubscription
+  url: ${SUB_URL}
+  selected: []
+  chains: []
+  updated: 0
+  auto_update: true
+  auto_update_interval: 14400
+SUBSCRIPTION
+      echo "[clash-verge] ✓ subscription injected from agenix"
+    fi
+  fi
+
+  echo "[clash-verge] ✓ config done"
+
+  # 5. Start clash-verge GUI (background, silent)
+  if ! pgrep -x clash-verge &>/dev/null; then
+    nohup clash-verge &>/dev/null &
+    echo "[clash-verge] GUI started"
+  fi
+else
+  echo "[clash-verge] not installed, skipping"
+fi
+{{ end -}}
+
+# --- Proxy readiness check ---
+echo ""
+echo "Checking proxy status..."
+if curl -s --max-time 5 https://www.google.com > /dev/null 2>&1; then
+  echo "✓ Proxy active"
+else
+  {{ if eq .chezmoi.os "linux" -}}
+  echo "⚠ No proxy detected."
+  echo "  If clash-verge was just started, wait a moment for TUN to activate."
+  echo "  Or manually start clash-verge GUI and enable TUN mode."
+  echo "  Press Enter to continue (or Ctrl+C to skip remaining installs)..."
+  read -r
+  {{ else -}}
+  echo "⚠ No proxy detected. Some downloads may fail without proxy."
+  echo "  Press Enter to continue..."
+  read -r
+  {{ end -}}
+fi
+
+echo "── Phase 2 complete ──"
+
+# ========================================
+# Phase 3: Bulk Package Installs (parallel)
+# ========================================
+echo ""
+echo "── Phase 3: Installing packages ──"
+pids=()
+
+{{ if eq .chezmoi.os "linux" -}}
+# --- Linux: pacman (batch — single transaction) ---
+(
+  echo "[pacman] installing..."
+  PKGS=( {{ range .packages.linux.pacman }}"{{ . }}" {{ end }})
+  {{ if eq .chezmoi.arch "amd64" -}}
+  PKGS+=( {{ range .packages.linux.pacman_amd64 }}"{{ . }}" {{ end }})
+  {{ end -}}
+  if sudo pacman -S --needed --noconfirm "${PKGS[@]}" 2>&1; then
+    echo "[pacman] ✓ done"
+  else
+    echo "[pacman] ⚠ some packages may have failed"
+  fi
+) &
+pids+=($!)
+
+# --- Linux: AUR (batch) ---
+(
+  AUR_PKGS=( {{ range .packages.linux.aur }}"{{ . }}" {{ end }})
+  if command -v yay &>/dev/null; then
+    echo "[aur/yay] installing..."
+    if yay -S --needed --noconfirm "${AUR_PKGS[@]}" 2>&1; then
+      echo "[aur/yay] ✓ done"
+    else
+      echo "[aur/yay] ⚠ some packages may have failed"
+    fi
+  elif command -v paru &>/dev/null; then
+    echo "[aur/paru] installing..."
+    if paru -S --needed --noconfirm "${AUR_PKGS[@]}" 2>&1; then
+      echo "[aur/paru] ✓ done"
+    else
+      echo "[aur/paru] ⚠ some packages may have failed"
+    fi
+  else
+    echo "[aur] ⚠ no AUR helper (yay/paru) found, skipping"
+  fi
+) &
+pids+=($!)
+
+# --- Linux: Flatpak ---
+(
+  echo "[flatpak] installing..."
+  flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+  {{ range .packages.linux.flatpak -}}
+  flatpak install --user -y flathub "{{ . }}" 2>&1 || echo "[flatpak] ⚠ {{ . }} failed"
+  {{ end }}
+  echo "[flatpak] ✓ done"
+) &
+pids+=($!)
+{{ end -}}
+
+{{ if eq .chezmoi.os "darwin" -}}
+# --- macOS: Homebrew (batch formulae, sequential casks) ---
+(
+  if command -v brew &>/dev/null; then
+    echo "[brew] installing formulae..."
+    brew install {{ range .packages.darwin.brews }}"{{ . }}" {{ end }}2>&1 || echo "[brew] ⚠ some formulae failed"
+
+    echo "[brew] installing casks..."
+    {{ range .packages.darwin.casks -}}
+    brew install --cask "{{ . }}" 2>&1 || echo "[brew] ⚠ cask {{ . }} failed"
+    {{ end }}
+    echo "[brew] ✓ done"
+  else
+    echo "[brew] ⚠ not found, skipping"
+  fi
+) &
+pids+=($!)
+{{ end -}}
+
+# Wait for all Phase 3 jobs
+for pid in "${pids[@]}"; do
+  wait "$pid" || true
+done
+echo ""
+echo "── Phase 3 complete ──"
+
+# ========================================
+# Phase 4: Post-Install Configuration (parallel)
+# ========================================
+echo ""
+echo "── Phase 4: Post-install configuration ──"
+pids=()
+
+{{ if eq .chezmoi.os "linux" -}}
+# --- Rime Build ---
+(
+  RIME_BUILD="$HOME/.local/bin/rime-build.sh"
+  if [ -x "$RIME_BUILD" ]; then
+    echo "[rime] building schemas..."
+    if "$RIME_BUILD" 2>&1; then
+      echo "[rime] ✓ done"
+    else
+      echo "[rime] ⚠ build failed — run manually: rime-build.sh"
+    fi
+  else
+    echo "[rime] build script not found, skipping"
+  fi
+) &
+pids+=($!)
+{{ end -}}
+
+# --- Claude Code (npm — downloads.claude.ai blocked in CN, use npm mirror) ---
+(
+  . /etc/profile.d/nix.sh 2>/dev/null || . "$HOME/.nix-profile/etc/profile.d/nix.sh" 2>/dev/null || true
+  if command -v npm &>/dev/null; then
+    mkdir -p "$HOME/.npm-global"
+    npm config set prefix "$HOME/.npm-global" 2>/dev/null
+    npm config set registry https://registry.npmmirror.com 2>/dev/null
+    export PATH="$HOME/.npm-global/bin:$PATH"
+    if ! command -v claude &>/dev/null; then
+      echo "[claude-code] installing..."
+      if npm install -g @anthropic-ai/claude-code 2>&1; then
+        echo "[claude-code] ✓ done"
+      else
+        echo "[claude-code] ⚠ npm install failed"
+      fi
+    else
+      echo "[claude-code] ✓ already installed"
+    fi
+  else
+    echo "[claude-code] npm not found, skipping"
+  fi
+) &
+pids+=($!)
+
+# --- Ensure zsh is default shell ---
+(
+  ZSH_PATH="$(command -v zsh 2>/dev/null)"
+  if [ -n "$ZSH_PATH" ]; then
+    {{ if eq .chezmoi.os "linux" -}}
+    CURRENT_SHELL=$(getent passwd "$USER" 2>/dev/null | cut -d: -f7)
+    if [ "$CURRENT_SHELL" != "$ZSH_PATH" ]; then
+      if ! grep -q "$ZSH_PATH" /etc/shells 2>/dev/null; then
+        echo "$ZSH_PATH" | sudo tee -a /etc/shells > /dev/null
+      fi
+      if chsh -s "$ZSH_PATH" 2>/dev/null; then
+        echo "[zsh] ✓ default shell changed to zsh"
+      else
+        echo "[zsh] ⚠ chsh failed, run: sudo chsh -s $ZSH_PATH $USER"
+      fi
+    else
+      echo "[zsh] ✓ already default"
+    fi
+    {{ else if eq .chezmoi.os "darwin" -}}
+    CURRENT_SHELL=$(dscl . -read /Users/"$USER" UserShell 2>/dev/null | awk '{print $2}')
+    if [ "$CURRENT_SHELL" != "$ZSH_PATH" ]; then
+      if chsh -s "$ZSH_PATH" 2>/dev/null; then
+        echo "[zsh] ✓ default shell changed to zsh"
+      else
+        echo "[zsh] ⚠ chsh failed"
+      fi
+    else
+      echo "[zsh] ✓ already default"
+    fi
+    {{ end -}}
+  fi
+) &
+pids+=($!)
+
+# Wait for all Phase 4 jobs
+for pid in "${pids[@]}"; do
+  wait "$pid" || true
+done
+echo ""
+echo "── Phase 4 complete ──"
+
+echo ""
+echo "========================================"
+echo "  ✓ Dotfiles setup complete"
+echo "========================================"
