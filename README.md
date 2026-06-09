@@ -927,22 +927,26 @@ chezmoi apply    # 编排管线会自动运行 home-manager switch
 ### 故障排查
 
 ```bash
-# 1. home-manager switch 失败？
+# 1. "ignoring untrusted substituter" 警告（macOS 常见）
+# 原因：当前用户不在 /etc/nix/nix.conf 的 trusted-users 列表中
+echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf
+
+# 2. home-manager switch 失败？
 # 先检查 flake 语法
 cd ~/dotfiles && nix flake check
 
 # 手动运行 home-manager（查看详细错误）
 nix run home-manager -- switch --flake ".#viryoke@cachyos-desktop" --impure -v
 
-# 2. 编排管线失败？
+# 3. 编排管线失败？
 # 单独运行某个阶段（脚本内容参考 run_onchange_orchest.sh.tmpl）
 chezmoi cat ~/.local/share/chezmoi/.chezmoiscripts/run_onchange_orchest.sh
 
-# 3. 回滚到上一次 home-manager 配置
+# 4. 回滚到上一次 home-manager 配置
 home-manager generations        # 查看所有代际
 home-manager switch --rollback  # 回滚
 
-# 4. agenix 解密失败？
+# 5. agenix 解密失败？
 # 确认 SSH 密钥已加载
 ssh-add -l
 # 重新导入密钥

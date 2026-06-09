@@ -38,9 +38,14 @@ mkdir -p "$HOME/.config/nix"
 cat > "$HOME/.config/nix/nix.conf" << 'EOF'
 experimental-features = nix-command flakes
 substituters = https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org
-trusted-substituters = https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store
 EOF
 echo "  Nix mirrors configured (TUNA/SJTU)"
+
+# Configure trusted-users in system /etc/nix/nix.conf (suppresses "untrusted substituter" warnings)
+if [ -f /etc/nix/nix.conf ] && ! grep -q "trusted-users.*$USER" /etc/nix/nix.conf 2>/dev/null; then
+  echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
+  echo "  trusted-users configured"
+fi
 {{ else if eq .chezmoi.os "darwin" }}
 if ! xcode-select -p &>/dev/null; then
   echo "Installing Xcode CLI tools..."
@@ -65,9 +70,14 @@ mkdir -p "$HOME/.config/nix"
 cat > "$HOME/.config/nix/nix.conf" << 'EOF'
 experimental-features = nix-command flakes
 substituters = https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org
-trusted-substituters = https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store
 EOF
 echo "  Nix mirrors configured (TUNA/SJTU)"
+
+# Configure trusted-users in system /etc/nix/nix.conf (suppresses "untrusted substituter" warnings)
+if [ -f /etc/nix/nix.conf ] && ! grep -q "trusted-users.*$USER" /etc/nix/nix.conf 2>/dev/null; then
+  echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
+  echo "  trusted-users configured"
+fi
 {{ end }}
 
 echo "=== Prerequisites check complete ==="

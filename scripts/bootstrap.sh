@@ -135,6 +135,24 @@ fi
 if command -v nix &>/dev/null; then
   echo "Nix $(nix --version)"
 fi
+
+# Configure trusted-users in system-level nix.conf
+# Required for single-user Nix: custom substituters are rejected unless the
+# user is in the trusted-users list at the daemon level (/etc/nix/nix.conf).
+# Without this, every Nix command spams "ignoring untrusted substituter" warnings.
+if [ -f /etc/nix/nix.conf ]; then
+  if grep -q "trusted-users" /etc/nix/nix.conf 2>/dev/null; then
+    # trusted-users already exists — check if current user is listed
+    if ! grep -q "trusted-users.*$USER" /etc/nix/nix.conf 2>/dev/null; then
+      echo "⚠ $USER not in trusted-users. Fix:"
+      echo "  sudo sed -i '' 's/^trusted-users.*/& $USER/' /etc/nix/nix.conf"
+    fi
+  else
+    # Append trusted-users
+    echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && \
+      echo "Added trusted-users = root $USER to /etc/nix/nix.conf"
+  fi
+fi
 echo ""
 
 # --- Phase 4: Clone Repository ---
@@ -157,10 +175,12 @@ echo "--- Phase 5: Deploy Dotfiles ---"
 chezmoi apply --force || true
 echo ""
 
-# --- Phase 6: Nix home-manager ---
-echo "--- Phase 6: Nix home-manager ---"
+# --- Phase 6: Nix home-manager (fallback) ---
+# The orchest script (Phase 2) already runs home-manager switch during
+# chezmoi apply. This is a safety net in case the orchest script was skipped.
+echo "--- Phase 6: Nix home-manager (fallback) ---"
 if command -v nix &>/dev/null; then
-  # Enable flakes
+  # Ensure nix.conf has flakes enabled (orchest script normally handles this)
   mkdir -p "$HOME/.config/nix"
   if ! grep -q "flakes" "$HOME/.config/nix/nix.conf" 2>/dev/null; then
     echo "experimental-features = nix-command flakes" >> "$HOME/.config/nix/nix.conf"
