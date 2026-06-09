@@ -43,3 +43,10 @@
     last = log -1 HEAD --stat
     undo = reset HEAD~1 --mixed
     amend = commit --amend --no-edit
+
+[credential "https://github.com"]
+    helper =
+    helper = !gh auth git-credential
+[credential "https://gist.github.com"]
+    helper =
+    helper = !gh auth git-credential
