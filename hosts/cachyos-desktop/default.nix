@@ -1,5 +1,6 @@
 { pkgs, lib, ... }: {
   imports = [
+    ../../modules/shared/nix.nix
     ../../modules/shared/packages.nix
     ../../modules/shared/shell.nix
     ../../modules/shared/editors.nix
@@ -15,6 +16,7 @@
     ../../modules/shared/exam-prep.nix
     ../../modules/shared/ai-learning.nix
     ../../modules/shared/hermes-agent.nix
+    ../../modules/shared/secrets.nix
     ../../modules/linux/packages.nix
     ../../modules/linux/clash-verge.nix
     ../../modules/linux/secrets.nix
