@@ -140,7 +140,7 @@ fi
 # substituters and trusted-public-keys must be here because they are restricted
 # settings in user-level ~/.config/nix/nix.conf (require trusted-users).
 NIX_SUBSTITUTERS="https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org"
-NIX_TRUSTED_KEYS="cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+NIX_TRUSTED_KEYS="cache.nixos.org-1:6NCHdD59X431o0gWypbMrAERkbvX7kpksj7lCDEz6eI="
 
 if [ ! -f /etc/nix/nix.conf ]; then
   sudo mkdir -p /etc/nix
