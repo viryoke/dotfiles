@@ -6,7 +6,7 @@ DOTFILES_DIR="${HOME}/dotfiles"
 
 echo ""
 echo "╔══════════════════════════════════════════╗"
-echo "║     viryoke/dotfiles Bootstrap           ║"
+echo "║       dotfiles Bootstrap                 ║"
 echo "╚══════════════════════════════════════════╝"
 echo ""
 
@@ -15,18 +15,7 @@ echo "--- Phase 0: Environment Detection ---"
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 ARCH="$(uname -m)"
 RAW_HOSTNAME="$(hostname)"
-
-# Normalize hostname to match flake.nix homeConfigurations keys
-# "viryokes-MacBook-Air" / "MacBook-Pro" / etc → "macbook"
-# "cachyos-x8664" / "cachyos-xxx" / etc → "cachyos-desktop"
-if echo "$RAW_HOSTNAME" | grep -qi "macbook"; then
-  HOSTNAME="macbook"
-elif echo "$RAW_HOSTNAME" | grep -qi "cachyos"; then
-  HOSTNAME="cachyos-desktop"
-else
-  HOSTNAME="$RAW_HOSTNAME"
-fi
-echo "OS: $OS | Arch: $ARCH | Hostname: $HOSTNAME"
+echo "OS: $OS | Arch: $ARCH | System Hostname: $RAW_HOSTNAME"
 
 if [ "$OS" = "linux" ] && [ -f /etc/os-release ]; then
   DISTRO=$(. /etc/os-release && echo "$ID")
@@ -34,8 +23,75 @@ if [ "$OS" = "linux" ] && [ -f /etc/os-release ]; then
 fi
 echo ""
 
-# --- Phase 1: Install Dependencies ---
-echo "--- Phase 1: Installing Dependencies ---"
+# --- Phase 1: Collect User Info ---
+echo "--- Phase 1: User Configuration ---"
+
+# Check if chezmoi config already exists
+CHEZMOI_CONFIG_DIR="${HOME}/.config/chezmoi"
+EXISTING_CONFIG=""
+for ext in toml yaml yml; do
+  if [ -f "$CHEZMOI_CONFIG_DIR/chezmoi.$ext" ]; then
+    EXISTING_CONFIG="$CHEZMOI_CONFIG_DIR/chezmoi.$ext"
+    break
+  fi
+done
+
+if [ -n "$EXISTING_CONFIG" ]; then
+  echo "chezmoi config already exists: $EXISTING_CONFIG"
+  echo "Skipping user configuration (delete the file to reconfigure)"
+  echo ""
+else
+  echo "Please provide the following information:"
+  echo ""
+
+  # Username (used for flake.nix homeConfigurations key)
+  read -rp "Username [${USER}]: " USERNAME < /dev/tty
+  USERNAME="${USERNAME:-$USER}"
+
+  # Git name
+  GIT_NAME_DEFAULT=$(git config --global user.name 2>/dev/null || echo "")
+  read -rp "Git user.name [${GIT_NAME_DEFAULT}]: " GIT_NAME < /dev/tty
+  GIT_NAME="${GIT_NAME:-$GIT_NAME_DEFAULT}"
+
+  # Git email
+  GIT_EMAIL_DEFAULT=$(git config --global user.email 2>/dev/null || echo "")
+  read -rp "Git user.email [${GIT_EMAIL_DEFAULT}]: " GIT_EMAIL < /dev/tty
+  GIT_EMAIL="${GIT_EMAIL:-$GIT_EMAIL_DEFAULT}"
+
+  # Hostname (used for flake.nix homeConfigurations key)
+  echo ""
+  echo "Hostname is used to select the correct Nix configuration in flake.nix."
+  echo "Available configurations in flake.nix: cachyos-desktop, macbook"
+  read -rp "Hostname [${RAW_HOSTNAME}]: " HOSTNAME < /dev/tty
+  HOSTNAME="${HOSTNAME:-$RAW_HOSTNAME}"
+
+  echo ""
+  echo "Summary:"
+  echo "  Username:  $USERNAME"
+  echo "  Git name:  $GIT_NAME"
+  echo "  Git email: $GIT_EMAIL"
+  echo "  Hostname:  $HOSTNAME"
+  echo ""
+
+  mkdir -p "$CHEZMOI_CONFIG_DIR"
+  cat > "$CHEZMOI_CONFIG_DIR/chezmoi.toml" << EOF
+sourceDir = "${DOTFILES_DIR}/home"
+workingTree = "${DOTFILES_DIR}"
+
+[data]
+username = "${USERNAME}"
+hostname = "${HOSTNAME}"
+
+[data.git]
+name = "${GIT_NAME}"
+email = "${GIT_EMAIL}"
+EOF
+  echo "chezmoi config written to $CHEZMOI_CONFIG_DIR/chezmoi.toml"
+  echo ""
+fi
+
+# --- Phase 2: Install Dependencies ---
+echo "--- Phase 2: Installing Dependencies ---"
 if [ "$OS" = "linux" ]; then
   if command -v pacman &>/dev/null; then
     sudo pacman -S --needed --noconfirm git chezmoi
@@ -57,8 +113,8 @@ elif [ "$OS" = "darwin" ]; then
 fi
 echo ""
 
-# --- Phase 2: Install Nix (single-user) ---
-echo "--- Phase 2: Nix Package Manager ---"
+# --- Phase 3: Install Nix (single-user) ---
+echo "--- Phase 3: Nix Package Manager ---"
 if ! command -v nix &>/dev/null; then
   echo "Installing Nix (single-user mode)..."
   sh <(curl -L https://nixos.org/nix/install) --no-daemon
@@ -72,11 +128,11 @@ if command -v nix &>/dev/null; then
 fi
 echo ""
 
-# --- Phase 3: Clone Repository ---
-echo "--- Phase 3: Clone Repository ---"
+# --- Phase 4: Clone Repository ---
+echo "--- Phase 4: Clone Repository ---"
 if [ -d "$DOTFILES_DIR/.git" ]; then
   echo "Repository already exists at $DOTFILES_DIR, pulling latest..."
-  git -C "$DOTFILES_DIR" pull --ff-only || git -C "$DOTFILES_DIR" fetch origin && git -C "$DOTFILES_DIR" reset --hard origin/main
+  git -C "$DOTFILES_DIR" pull --ff-only || { git -C "$DOTFILES_DIR" fetch origin && git -C "$DOTFILES_DIR" reset --hard origin/main; }
 elif [ -d "$DOTFILES_DIR" ]; then
   echo "$DOTFILES_DIR exists but is not a git repo, removing..."
   rm -rf "$DOTFILES_DIR"
@@ -84,46 +140,6 @@ elif [ -d "$DOTFILES_DIR" ]; then
 else
   echo "Cloning to $DOTFILES_DIR..."
   git clone "$DOTFILES_REPO" "$DOTFILES_DIR"
-fi
-echo ""
-
-# --- Phase 4: Configure chezmoi ---
-echo "--- Phase 4: Configure chezmoi ---"
-CHEZMOI_CONFIG_DIR="${HOME}/.config/chezmoi"
-mkdir -p "$CHEZMOI_CONFIG_DIR"
-
-# Check if chezmoi config already exists (yaml or toml)
-EXISTING_CONFIG=""
-for ext in toml yaml yml; do
-  if [ -f "$CHEZMOI_CONFIG_DIR/chezmoi.$ext" ]; then
-    EXISTING_CONFIG="$CHEZMOI_CONFIG_DIR/chezmoi.$ext"
-    break
-  fi
-done
-
-if [ -n "$EXISTING_CONFIG" ]; then
-  echo "chezmoi config already exists: $EXISTING_CONFIG (skipping)"
-else
-  # Ask for git info
-  GIT_NAME=$(git config --global user.name 2>/dev/null || echo "")
-  GIT_EMAIL=$(git config --global user.email 2>/dev/null || echo "")
-
-  if [ -z "$GIT_NAME" ]; then
-    read -rp "Git user.name: " GIT_NAME < /dev/tty
-  fi
-  if [ -z "$GIT_EMAIL" ]; then
-    read -rp "Git user.email: " GIT_EMAIL < /dev/tty
-  fi
-
-  cat > "$CHEZMOI_CONFIG_DIR/chezmoi.toml" << EOF
-sourceDir = "${DOTFILES_DIR}/home"
-workingTree = "${DOTFILES_DIR}"
-
-[data.git]
-name = "${GIT_NAME}"
-email = "${GIT_EMAIL}"
-EOF
-  echo "chezmoi config written to $CHEZMOI_CONFIG_DIR/chezmoi.toml"
 fi
 echo ""
 
@@ -141,11 +157,12 @@ if command -v nix &>/dev/null; then
     echo "experimental-features = nix-command flakes" >> "$HOME/.config/nix/nix.conf"
   fi
 
-  echo "Running home-manager switch for viryoke@${HOSTNAME}..."
+  echo "Running home-manager switch..."
   cd "$DOTFILES_DIR"
-  nix run home-manager -- switch --flake ".#viryoke@${HOSTNAME}" --impure || {
+  chezmoi execute-template '{{ .username }}@{{ .hostname }}' | xargs -I{} \
+    nix run home-manager -- switch --flake ".#{}" --impure || {
     echo "WARNING: home-manager switch failed. Run manually:"
-    echo "  cd ~/dotfiles && nix run home-manager -- switch --flake \".#viryoke@${HOSTNAME}\" --impure"
+    echo "  cd ~/dotfiles && nix run home-manager -- switch --flake \".#\$(chezmoi execute-template '{{ .username }}@{{ .hostname }}')\" --impure"
   }
 fi
 echo ""
@@ -185,5 +202,6 @@ echo "╠═══════════════════════�
 echo "║  Next steps:                             ║"
 echo "║  1. Import age identity key              ║"
 echo "║  2. Restart terminal                     ║"
-echo "║  3. cd ~/dotfiles && git push (first time║"
+echo "║  3. cd ~/dotfiles && git remote set-url  ║"
+echo "║     origin <your-repo> && git push       ║"
 echo "╚══════════════════════════════════════════╝"

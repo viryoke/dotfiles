@@ -4,19 +4,13 @@ set -euo pipefail
 echo "=== Deploying Nix home-manager ==="
 
 DOTFILES_DIR="{{ .chezmoi.workingTree }}"
-# Normalize hostname to match flake.nix homeConfigurations keys
-{{ if or (eq .chezmoi.hostname "macbook") (contains "MacBook" .chezmoi.hostname) }}
-HOSTNAME="macbook"
-{{ else if contains "cachyos" .chezmoi.hostname }}
-HOSTNAME="cachyos-desktop"
-{{ else }}
-HOSTNAME="{{ .chezmoi.hostname }}"
-{{ end }}
+USERNAME="{{ .username }}"
+HOSTNAME="{{ .hostname }}"
 
 if command -v nix &>/dev/null; then
   cd "$DOTFILES_DIR"
-  echo "Running home-manager switch for viryoke@${HOSTNAME}..."
-  nix run home-manager -- switch --flake ".#viryoke@${HOSTNAME}" --impure
+  echo "Running home-manager switch for ${USERNAME}@${HOSTNAME}..."
+  nix run home-manager -- switch --flake ".#${USERNAME}@${HOSTNAME}" --impure
   echo "=== home-manager deployment complete ==="
 else
   echo "WARNING: Nix not found. Skipping home-manager deployment."

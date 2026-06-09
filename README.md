@@ -18,9 +18,9 @@ curl -fsSL https://raw.githubusercontent.com/viryoke/dotfiles/main/scripts/boots
 ```
 
 脚本会自动：
-1. 安装 git、chezmoi、Nix（单用户模式，不创建 build users）
-2. 克隆仓库到 `~/dotfiles`
-3. 配置 chezmoi 指向本地仓库（交互式输入 Git 用户名/邮箱）
+1. 交互式配置：用户名、Git 信息、主机名（用于选择 Nix 配置）
+2. 安装 git、chezmoi、Nix（单用户模式，不创建 build users）
+3. 克隆仓库到 `~/dotfiles`
 4. 部署 dotfiles 并运行 home-manager
 5. 设置 zsh 为默认 shell 并运行健康检查
 
@@ -46,6 +46,10 @@ mkdir -p ~/.config/chezmoi
 cat > ~/.config/chezmoi/chezmoi.toml << 'EOF'
 sourceDir = "~/dotfiles/home"
 workingTree = "~/dotfiles"
+
+[data]
+username = "<your-username>"
+hostname = "<your-hostname>"
 
 [data.git]
 name = "<your-name>"
@@ -78,6 +82,10 @@ mkdir -p ~/.config/chezmoi
 cat > ~/.config/chezmoi/chezmoi.toml << 'EOF'
 sourceDir = "~/dotfiles/home"
 workingTree = "~/dotfiles"
+
+[data]
+username = "<your-username>"
+hostname = "<your-hostname>"
 
 [data.git]
 name = "<your-name>"
