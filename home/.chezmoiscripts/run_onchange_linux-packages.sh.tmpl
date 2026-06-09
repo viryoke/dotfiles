@@ -36,11 +36,11 @@ fi
 
 if command -v flatpak &>/dev/null; then
   echo "Setting up Flatpak..."
-  sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+  flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
   {{ range .packages.linux.flatpak -}}
   echo "Installing {{ . }}..."
-  flatpak install -y flathub {{ . | quote }}
+  flatpak install --user -y flathub {{ . | quote }}
   {{ end }}
 fi
 
