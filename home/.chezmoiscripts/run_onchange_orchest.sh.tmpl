@@ -60,6 +60,25 @@ fi
 # Re-source Nix profile after switch (new packages available)
 . /etc/profile.d/nix.sh 2>/dev/null || . "$HOME/.nix-profile/etc/profile.d/nix.sh" 2>/dev/null || true
 
+# --- GitHub CLI: authenticate with agenix token ---
+if command -v gh &>/dev/null; then
+  AGENIX_GH_TOKEN="$XDG_RUNTIME_DIR/agenix/github_token"
+  if [ -f "$AGENIX_GH_TOKEN" ]; then
+    if ! gh auth status &>/dev/null 2>&1; then
+      if gh auth login --with-token < "$AGENIX_GH_TOKEN" 2>&1; then
+        gh auth setup-git 2>/dev/null || true
+        echo "[gh] ✓ authenticated from agenix secret"
+      else
+        echo "[gh] ⚠ auth login failed"
+      fi
+    else
+      echo "[gh] ✓ already authenticated"
+    fi
+  else
+    echo "[gh] no agenix token found, skipping"
+  fi
+fi
+
 {{ if eq .chezmoi.os "linux" -}}
 # --- Clash Verge: autostart + silent + TUN + subscription ---
 if command -v clash-verge &>/dev/null; then
