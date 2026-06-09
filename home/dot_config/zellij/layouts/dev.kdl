@@ -6,7 +6,4 @@ layout {
         pane size="20%" command="yazi" start_suspended=false
         pane size="80%" command="nvim" start_suspended=false
     }
-    pane size=2 borderless=true {
-        plugin location="zellij:status-bar"
-    }
 }
