@@ -24,3 +24,6 @@ Thumbs.db
 # Temporary
 *.tmp
 *.bak
+
+# Documentation (local only)
+docs/
