@@ -1,22 +1,21 @@
 #!/bin/bash
-set -euo pipefail
 
 {{ if eq .chezmoi.os "linux" -}}
 echo "=== Installing Linux packages ==="
 
 if command -v pacman &>/dev/null; then
   echo "Installing pacman packages..."
-  # --ignore nvidia-open-dkms: CachyOS uses pre-compiled kernel modules
-  # (linux-cachyos-lts-nvidia-open), installing DKMS would cause conflict
-  # Redirect stdin from /dev/tty so pacman can prompt for conflict resolution
-  sudo pacman -S --needed --noconfirm --ignore nvidia-open-dkms \
-    {{ range .packages.linux.pacman }}{{ . | quote }} {{ end }} < /dev/tty
+  # --ask=4: if a package conflicts with an installed one, keep the existing
+  # --noconfirm: auto-confirm normal install prompts
+  # || true: don't abort if a package fails
+  sudo pacman -S --needed --noconfirm --ask=4 \
+    {{ range .packages.linux.pacman }}{{ . | quote }} {{ end }} || true
 
   {{ if eq .chezmoi.arch "amd64" }}
   {{ if .packages.linux.pacman_amd64 }}
   echo "Installing amd64-specific pacman packages..."
-  sudo pacman -S --needed --noconfirm \
-    {{ range .packages.linux.pacman_amd64 }}{{ . | quote }} {{ end }}
+  sudo pacman -S --needed --noconfirm --ask=4 \
+    {{ range .packages.linux.pacman_amd64 }}{{ . | quote }} {{ end }} || true
   {{ end }}
   {{ end }}
 fi
@@ -25,12 +24,12 @@ fi
 if command -v yay &>/dev/null; then
   echo "Installing AUR packages via yay..."
   {{ range .packages.linux.aur -}}
-  yay -S --needed --noconfirm {{ . | quote }}
+  yay -S --needed --noconfirm {{ . | quote }} || true
   {{ end }}
 elif command -v paru &>/dev/null; then
   echo "Installing AUR packages via paru..."
   {{ range .packages.linux.aur -}}
-  paru -S --needed --noconfirm {{ . | quote }}
+  paru -S --needed --noconfirm {{ . | quote }} || true
   {{ end }}
 else
   echo "WARNING: No AUR helper found (yay/paru). Skipping AUR packages."
@@ -43,7 +42,7 @@ if command -v flatpak &>/dev/null; then
 
   {{ range .packages.linux.flatpak -}}
   echo "Installing {{ . }}..."
-  flatpak install --user -y flathub {{ . | quote }}
+  flatpak install --user -y flathub {{ . | quote }} || true
   {{ end }}
 fi
 
