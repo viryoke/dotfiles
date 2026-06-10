@@ -10,6 +10,10 @@ secrets/
 scripts/
 docs/
 
+# fcitx5/profile is a runtime state file — fcitx5 modifies it at runtime
+# (input method switching, group changes). Don't let chezmoi fight with it.
+.config/fcitx5/profile
+
 {{ if ne .chezmoi.os "linux" }}
 .config/fcitx5
 .local/share/fcitx5
