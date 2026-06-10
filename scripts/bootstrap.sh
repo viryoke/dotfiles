@@ -150,10 +150,13 @@ trusted-public-keys = ${NIX_TRUSTED_KEYS}
 SYSCONF
   echo "Created /etc/nix/nix.conf (trusted-users + substituters + keys)"
 else
+  # Determine sed in-place flag (macOS: -i '', Linux: -i)
+  if [ "$OS" = "darwin" ]; then SED_INPLACE=(sed -i ''); else SED_INPLACE=(sed -i); fi
+
   # trusted-users: append user if not already present
   if ! grep -q "trusted-users.*$USER" /etc/nix/nix.conf 2>/dev/null; then
     if grep -q "^trusted-users" /etc/nix/nix.conf 2>/dev/null; then
-      sudo sed -i '' "s/^trusted-users.*/& $USER/" /etc/nix/nix.conf 2>/dev/null && \
+      sudo "${SED_INPLACE[@]}" "s/^trusted-users.*/& $USER/" /etc/nix/nix.conf 2>/dev/null && \
         echo "Updated trusted-users (added $USER)"
     else
       echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && \
@@ -162,7 +165,7 @@ else
   fi
   # substituters: replace existing line or append
   if grep -q "^substituters" /etc/nix/nix.conf 2>/dev/null; then
-    sudo sed -i '' "s|^substituters.*|substituters = ${NIX_SUBSTITUTERS}|" /etc/nix/nix.conf 2>/dev/null && \
+    sudo "${SED_INPLACE[@]}" "s|^substituters.*|substituters = ${NIX_SUBSTITUTERS}|" /etc/nix/nix.conf 2>/dev/null && \
       echo "Updated substituters"
   else
     echo "substituters = ${NIX_SUBSTITUTERS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && \
@@ -170,7 +173,7 @@ else
   fi
   # trusted-public-keys: replace existing line or append
   if grep -q "^trusted-public-keys" /etc/nix/nix.conf 2>/dev/null; then
-    sudo sed -i '' "s|^trusted-public-keys.*|trusted-public-keys = ${NIX_TRUSTED_KEYS}|" /etc/nix/nix.conf 2>/dev/null && \
+    sudo "${SED_INPLACE[@]}" "s|^trusted-public-keys.*|trusted-public-keys = ${NIX_TRUSTED_KEYS}|" /etc/nix/nix.conf 2>/dev/null && \
       echo "Updated trusted-public-keys"
   else
     echo "trusted-public-keys = ${NIX_TRUSTED_KEYS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && \
@@ -178,14 +181,28 @@ else
   fi
 fi
 
-# Restart Nix daemon to pick up /etc/nix/nix.conf changes (macOS + Linux)
+# Restart Nix daemon to pick up /etc/nix/nix.conf changes (if daemon exists)
 if [ "$OS" = "darwin" ]; then
-  sudo launchctl kickstart -k system/org.nixos.nix-daemon 2>/dev/null && echo "Nix daemon restarted" \
-    || { sudo pkill -HUP nix-daemon 2>/dev/null && echo "Nix daemon reloaded (SIGHUP)" \
-      || echo "⚠ No Nix daemon found — run manually: sudo launchctl kickstart -k system/org.nixos.nix-daemon"; }
+  if launchctl print system/org.nixos.nix-daemon &>/dev/null; then
+    sudo launchctl kickstart -k system/org.nixos.nix-daemon 2>/dev/null && echo "Nix daemon restarted"
+  else
+    echo "No Nix daemon (single-user mode) — config applied immediately"
+  fi
 else
-  sudo systemctl restart nix-daemon.service 2>/dev/null && echo "Nix daemon restarted" \
-    || echo "⚠ daemon restart failed — run manually: sudo systemctl restart nix-daemon"
+  if systemctl is-enabled nix-daemon.service &>/dev/null || systemctl is-enabled nix-daemon.socket &>/dev/null; then
+    sudo systemctl restart nix-daemon.service 2>/dev/null && echo "Nix daemon restarted" \
+      || sudo systemctl restart nix-daemon.socket 2>/dev/null && echo "Nix daemon socket restarted" \
+      || echo "⚠ daemon restart failed"
+  else
+    # Single-user mode: no daemon. Remove stale socket if present
+    # (leftover from previous multi-user install causes "Connection refused")
+    if [ -S /nix/var/nix/daemon-socket/socket ] 2>/dev/null; then
+      echo "Removing stale Nix daemon socket..."
+      sudo rm -f /nix/var/nix/daemon-socket/socket 2>/dev/null && echo "✓ Stale socket removed" \
+        || echo "⚠ Run manually: sudo rm -f /nix/var/nix/daemon-socket/socket"
+    fi
+    echo "No Nix daemon (single-user mode) — config applied immediately"
+  fi
 fi
 echo ""
 echo "--- Phase 4: Clone Repository ---"

@@ -86,16 +86,30 @@ else
   fi
 fi
 
-# Restart Nix daemon if config changed (required for daemon to re-read nix.conf)
+# Restart Nix daemon if config changed (only if daemon exists)
 if [ "$NIX_CONF_CHANGED" = true ]; then
   {{ if eq .chezmoi.os "darwin" -}}
-  sudo launchctl kickstart -k system/org.nixos.nix-daemon 2>/dev/null && echo "[nix] ✓ daemon restarted" \
-    || { sudo pkill -HUP nix-daemon 2>/dev/null && echo "[nix] ✓ daemon reloaded (SIGHUP)" \
-      || echo "[nix] ⚠ daemon restart failed — run: sudo launchctl kickstart -k system/org.nixos.nix-daemon"; }
+  if launchctl print system/org.nixos.nix-daemon &>/dev/null; then
+    sudo launchctl kickstart -k system/org.nixos.nix-daemon 2>/dev/null && echo "[nix] ✓ daemon restarted"
+  else
+    echo "[nix] no daemon (single-user mode) — config applied immediately"
+  fi
   {{ else -}}
-  sudo systemctl restart nix-daemon.service 2>/dev/null && echo "[nix] ✓ daemon restarted" \
-    || echo "[nix] ⚠ daemon restart failed — run: sudo systemctl restart nix-daemon"
+  if systemctl is-enabled nix-daemon.service &>/dev/null || systemctl is-enabled nix-daemon.socket &>/dev/null; then
+    sudo systemctl restart nix-daemon.service 2>/dev/null && echo "[nix] ✓ daemon restarted" \
+      || sudo systemctl restart nix-daemon.socket 2>/dev/null && echo "[nix] ✓ daemon socket restarted" \
+      || echo "[nix] ⚠ daemon restart failed"
+  else
+    # Single-user mode: remove stale socket if present
+    if [ -S /nix/var/nix/daemon-socket/socket ] 2>/dev/null; then
+      sudo rm -f /nix/var/nix/daemon-socket/socket 2>/dev/null && echo "[nix] ✓ stale socket removed" \
+        || echo "[nix] ⚠ run: sudo rm -f /nix/var/nix/daemon-socket/socket"
+    fi
+    echo "[nix] no daemon (single-user mode) — config applied immediately"
+  fi
   {{ end -}}
+else
+  echo "[nix] ✓ config unchanged, no restart needed"
 fi
 echo "[mirrors] ✓ Nix: TUNA + SJTU"
 
