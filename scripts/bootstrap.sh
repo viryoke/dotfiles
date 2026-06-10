@@ -136,6 +136,14 @@ if command -v nix &>/dev/null; then
   echo "Nix $(nix --version)"
 fi
 
+# Single-user Nix requires /nix to be owned by the current user.
+# If /nix exists but is owned by root (leftover from multi-user install),
+# fix ownership so nix build/home-manager can write to the store.
+if [ -d /nix ] && [ "$(stat -c '%u' /nix 2>/dev/null || stat -f '%u' /nix 2>/dev/null)" != "$(id -u)" ]; then
+  echo "/nix is owned by root — fixing ownership for single-user mode..."
+  sudo chown -R "$(whoami)" /nix
+fi
+
 # Configure system-level /etc/nix/nix.conf (daemon level — always respected)
 # Uses sed to replace existing lines (not grep+append) so wrong values get corrected.
 NIX_SUBSTITUTERS="https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org"
