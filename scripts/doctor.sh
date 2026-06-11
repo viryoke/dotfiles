@@ -82,14 +82,8 @@ OS="$(uname -s)"
 
 echo ""
 if [ "$OS" = "Linux" ]; then
-  echo "--- Wayland Utilities (Linux) ---"
-  warn "rofi-wayland" "command -v rofi"
+  echo "--- Linux Utilities ---"
   warn "cliphist" "command -v cliphist"
-  warn "grim" "command -v grim"
-  warn "slurp" "command -v slurp"
-  warn "mako" "command -v mako"
-  warn "wlogout" "command -v wlogout"
-  warn "swww" "command -v swww"
   warn "fcitx5" "command -v fcitx5"
 elif [ "$OS" = "Darwin" ]; then
   echo "--- macOS Utilities ---"
