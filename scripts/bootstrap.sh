@@ -104,6 +104,16 @@ fi
 echo "--- Phase 2: Installing Dependencies ---"
 if [ "$OS" = "linux" ]; then
   if command -v pacman &>/dev/null; then
+    # Configure Arch Linux ARM mirrors for China (aarch64 only)
+    if [ "$ARCH" = "aarch64" ] && [ -f /etc/pacman.d/mirrorlist ]; then
+      if ! grep -q "tuna.tsinghua.edu.cn" /etc/pacman.d/mirrorlist 2>/dev/null; then
+        echo "Configuring Arch Linux ARM mirrors (TUNA)..."
+        sudo cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.bak
+        sudo sed -i '1iServer = https://mirrors.tuna.tsinghua.edu.cn/archlinuxarm/$os/$arch' /etc/pacman.d/mirrorlist
+        sudo sed -i '2iServer = https://mirrors.ustc.edu.cn/archlinuxarm/$os/$arch' /etc/pacman.d/mirrorlist
+        echo "✓ Arch Linux ARM mirrors configured"
+      fi
+    fi
     sudo pacman -S --needed --noconfirm git chezmoi
   else
     echo "ERROR: Only Arch-based systems (CachyOS) are supported for Linux."
@@ -184,13 +194,20 @@ if command -v nix &>/dev/null; then
     echo "experimental-features = nix-command flakes" >> "$HOME/.config/nix/nix.conf"
   fi
 
+  # Inject GitHub token to avoid API rate limits
+  if [ -n "${GITHUB_TOKEN:-}" ]; then
+    export NIX_CONFIG="access-tokens = github.com=$GITHUB_TOKEN"
+    echo "[nix-hm] ✓ GitHub token from \$GITHUB_TOKEN"
+  fi
+
   echo "Running home-manager switch..."
   cd "$DOTFILES_DIR"
   chezmoi execute-template '{{ .username }}@{{ .hostname }}' | xargs -I{} \
     nix run --accept-flake-config home-manager -- switch --flake ".#{}" --impure || {
     echo "WARNING: home-manager switch failed. Run manually:"
-    echo "  cd ~/dotfiles && nix run --accept-flake-config home-manager -- switch --flake \".#\$(chezmoi execute-template '{{ .username }}@{{ .hostname }}')\" --impure"
+    echo "  GITHUB_TOKEN=your_token cd ~/dotfiles && nix run --accept-flake-config home-manager -- switch --flake \".#\$(chezmoi execute-template '{{ .username }}@{{ .hostname }}')\" --impure"
   }
+  unset NIX_CONFIG
 fi
 echo ""
 

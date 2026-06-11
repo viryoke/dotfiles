@@ -44,16 +44,34 @@ echo "── Phase 2: Nix home-manager + Clash Verge ──"
 if command -v nix &>/dev/null; then
   . /etc/profile.d/nix.sh 2>/dev/null || . "$HOME/.nix-profile/etc/profile.d/nix.sh" 2>/dev/null || true
 
-  # Pre-decrypt GitHub token to avoid API rate limits during flake fetch
-  # (agenix normally decrypts during home-manager activation, but we need it earlier)
-  SECRETS_DIR="{{ .chezmoi.workingTree }}/secrets"
-  SSH_KEY="$HOME/.ssh/id_ed25519"
-  if [ -f "$SECRETS_DIR/github_token.age" ] && [ -f "$SSH_KEY" ] && command -v age &>/dev/null; then
-    GH_TOKEN=$(age --decrypt --identity "$SSH_KEY" "$SECRETS_DIR/github_token.age" 2>/dev/null || true)
-    if [ -n "$GH_TOKEN" ]; then
-      export NIX_CONFIG="access-tokens = github.com=$GH_TOKEN"
-      echo "[nix-hm] ✓ GitHub token pre-loaded (avoids API rate limits)"
+  # Pre-load GitHub token to avoid API rate limits during flake fetch.
+  # Priority: 1) GITHUB_TOKEN env var  2) age decrypt  3) ssh-keygen + age decrypt
+  _GH_TOKEN=""
+  if [ -n "${GITHUB_TOKEN:-}" ]; then
+    _GH_TOKEN="$GITHUB_TOKEN"
+    echo "[nix-hm] ✓ GitHub token from \$GITHUB_TOKEN env var"
+  else
+    SECRETS_DIR="{{ .chezmoi.workingTree }}/secrets"
+    SSH_KEY="$HOME/.ssh/id_ed25519"
+    if [ -f "$SECRETS_DIR/github_token.age" ] && [ -f "$SSH_KEY" ]; then
+      if command -v age &>/dev/null; then
+        _GH_TOKEN=$(age --decrypt --identity "$SSH_KEY" "$SECRETS_DIR/github_token.age" 2>/dev/null || true)
+      elif command -v ssh-keygen &>/dev/null; then
+        _AGE_KEY=$(ssh-keygen -p -f "$SSH_KEY" -N "" -P "" -o 2>/dev/null | grep -v "^$" || true)
+        if [ -n "$_AGE_KEY" ]; then
+          _AGE_IDENTITY=$(mktemp)
+          ssh-keygen -p -f "$SSH_KEY" -N "" -P "" -o 2>/dev/null > "$_AGE_IDENTITY" || true
+          # Try decryption with converted key
+          _GH_TOKEN=$(age --decrypt --identity "$_AGE_IDENTITY" "$SECRETS_DIR/github_token.age" 2>/dev/null || true)
+          rm -f "$_AGE_IDENTITY"
+        fi
+      fi
+      [ -n "$_GH_TOKEN" ] && echo "[nix-hm] ✓ GitHub token pre-loaded from agenix secret"
     fi
+  fi
+
+  if [ -n "$_GH_TOKEN" ]; then
+    export NIX_CONFIG="access-tokens = github.com=$_GH_TOKEN"
   fi
 
   echo "[nix-hm] switching..."
@@ -62,8 +80,10 @@ if command -v nix &>/dev/null; then
     echo "[nix-hm] ✓ done"
   else
     echo "[nix-hm] ⚠ home-manager switch failed"
+    echo "  Hint: set GITHUB_TOKEN env var and retry:"
+    echo "  GITHUB_TOKEN=your_token chezmoi apply"
   fi
-  unset NIX_CONFIG GH_TOKEN
+  unset NIX_CONFIG _GH_TOKEN
 else
   echo "[nix-hm] ⚠ nix not found, skipping"
 fi
