@@ -19,7 +19,7 @@
 
   outputs = { self, nixpkgs, home-manager, nix-darwin, agenix, ... }:
     let
-      supportedSystems = [ "x86_64-linux" "aarch64-darwin" ];
+      supportedSystems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
     in
     {
@@ -51,6 +51,20 @@
             isLinux = false;
             isDarwin = true;
             hostname = "macbook";
+          };
+        };
+
+        "viryoke@arch-arm" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.aarch64-linux;
+          modules = [
+            ./hosts/arch-arm
+            agenix.homeManagerModules.default
+          ];
+          extraSpecialArgs = {
+            inherit self;
+            isLinux = true;
+            isDarwin = false;
+            hostname = "arch-arm";
           };
         };
       };
