@@ -2,6 +2,7 @@
 # Fish is the primary shell. Zsh only serves as a fallback launcher.
 
 # === Nix environment ===
+export PATH="/nix/var/nix/profiles/default/bin:$PATH"
 if [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
   . "$HOME/.nix-profile/etc/profile.d/nix.sh"
 fi

@@ -31,6 +31,7 @@ set -gx EDITOR nvim
 set -gx VISUAL nvim
 
 # --- Nix environment ---
+fish_add_path -gP /nix/var/nix/profiles/default/bin
 if test -e "$HOME/.nix-profile/etc/profile.d/nix-daemon.fish"
     source "$HOME/.nix-profile/etc/profile.d/nix-daemon.fish"
 else if test -e "$HOME/.nix-profile/etc/profile.d/nix.fish"
@@ -117,6 +118,11 @@ end
 # --- Fzf (fuzzy finder) ---
 if command -v fzf &>/dev/null
     fzf --fish | source
+end
+
+# --- Devenv (auto-activation on cd) ---
+if command -v devenv &>/dev/null
+    devenv hook fish | source
 end
 
 # --- Fzf theme: Catppuccin Mocha ---

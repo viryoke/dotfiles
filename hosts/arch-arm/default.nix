@@ -13,6 +13,7 @@
     ../../modules/shared/dev-lua.nix
     ../../modules/shared/ai-tools.nix
     ../../modules/shared/ai-learning.nix
+    ../../modules/shared/devenv.nix
     ../../modules/shared/secrets.nix
     ../../modules/linux/packages.nix
   ];

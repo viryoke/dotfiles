@@ -154,6 +154,7 @@ if ! command -v nix &>/dev/null; then
   sh <(curl -L https://nixos.org/nix/install) --no-daemon
 fi
 # Load Nix into current shell
+export PATH="/nix/var/nix/profiles/default/bin:$PATH"
 if [ -f "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
   . "$HOME/.nix-profile/etc/profile.d/nix.sh"
 fi
