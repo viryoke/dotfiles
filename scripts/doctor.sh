@@ -39,7 +39,7 @@ check "git" "command -v git"
 
 echo ""
 echo "--- Shell ---"
-check "zsh" "command -v zsh"
+check "fish" "command -v fish"
 check "starship" "command -v starship"
 check "zellij" "command -v zellij"
 
@@ -109,6 +109,36 @@ if command -v chezmoi &>/dev/null; then
     echo "  [WARN] $DIFF_COUNT files differ from source"
     ((WARN++))
   fi
+fi
+
+echo ""
+echo "--- Secrets ---"
+SECRETS_DIR="$HOME/dotfiles/secrets"
+if [ -d "$SECRETS_DIR" ]; then
+  for age_file in "$SECRETS_DIR"/*.age; do
+    if [ -f "$age_file" ]; then
+      filename=$(basename "$age_file")
+      # Get file modification time in seconds since epoch (GNU stat vs BSD stat)
+      file_mtime=$(stat -c %Y "$age_file" 2>/dev/null || stat -f %m "$age_file" 2>/dev/null)
+      if [ -n "$file_mtime" ]; then
+        now=$(date +%s)
+        age_days=$(( (now - file_mtime) / 86400 ))
+        if [ "$age_days" -gt 90 ]; then
+          echo "  [WARN] $filename is $age_days days old (consider rotating)"
+          ((WARN++))
+        else
+          echo "  [OK] $filename ($age_days days old)"
+          ((PASS++))
+        fi
+      else
+        echo "  [WARN] $filename (could not determine age)"
+        ((WARN++))
+      fi
+    fi
+  done
+else
+  echo "  [WARN] secrets directory not found"
+  ((WARN++))
 fi
 
 echo ""

@@ -28,8 +28,8 @@ packages:
       - "fcitx5-chinese-addons"
       - "tailscale"
     pacman_amd64:
-      - "ghostty"
-      - "ghostty-terminfo"
+      - "alacritty"
+      - "fish"
     flatpak:
       - "org.mozilla.firefox"
       - "org.telegram.desktop"
@@ -57,9 +57,10 @@ packages:
       - "tree"
       - "gnu-sed"
       - "coreutils"
+      - "fish"
     casks:
       - "google-chrome"
-      - "ghostty"
+      - "alacritty"
       - "telegram"
       - "clash-verge-rev"
       - "baidunetdisk"

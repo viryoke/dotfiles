@@ -1,4 +1,4 @@
-theme "gruvbox-material-dark"
+theme "catppuccin-mocha"
 default_layout "default"
 mouse_mode true
 on_force_close "detach"
@@ -7,17 +7,17 @@ disable_session_metadata true
 show_startup_tips false
 
 themes {
-    gruvbox-material-dark {
-        fg "#ebdbb2"
-        bg "#282828"
-        black "#282828"
-        red "#fb4934"
-        green "#b8bb26"
-        yellow "#fabd2f"
-        blue "#83a598"
-        magenta "#d3869b"
-        cyan "#8ec07c"
-        white "#ebdbb2"
-        orange "#fe8019"
+    catppuccin-mocha {
+        fg "#cdd6f4"
+        bg "#1e1e2e"
+        black "#45475a"
+        red "#f38ba8"
+        green "#a6e3a1"
+        yellow "#f9e2af"
+        blue "#89b4fa"
+        magenta "#f5c2e7"
+        cyan "#94e2d5"
+        white "#bac2de"
+        orange "#fab387"
     }
 }

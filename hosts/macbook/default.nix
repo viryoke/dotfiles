@@ -2,7 +2,6 @@
   imports = [
     ../../modules/shared/nix.nix
     ../../modules/shared/packages.nix
-    ../../modules/shared/shell.nix
     ../../modules/shared/editors.nix
     ../../modules/shared/theme.nix
     ../../modules/shared/dev-java.nix
@@ -14,7 +13,6 @@
     ../../modules/shared/dev-lua.nix
     ../../modules/shared/exam-prep.nix
     ../../modules/shared/ai-learning.nix
-    ../../modules/shared/hermes-agent.nix
     ../../modules/shared/secrets.nix
     ../../modules/darwin/packages.nix
   ];

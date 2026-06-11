@@ -1,123 +1,20 @@
 # ~/.zshrc - Managed by chezmoi
-
-# === History ===
-HISTSIZE=50000
-SAVEHIST=50000
-HISTFILE=~/.zsh_history
-setopt INC_APPEND_HISTORY
-setopt HIST_IGNORE_DUPS
-setopt HIST_IGNORE_SPACE
-setopt EXTENDED_HISTORY
-setopt SHARE_HISTORY
-
-# === Cross-platform PATH ===
-{{ if eq .chezmoi.os "linux" }}
-export PATH="$HOME/.nix-profile/bin:$HOME/.local/bin:/usr/local/bin:$PATH"
-{{ else if eq .chezmoi.os "darwin" }}
-export PATH="$HOME/.nix-profile/bin:/opt/homebrew/bin:$HOME/.local/bin:$PATH"
-{{ end }}
+# Fish is the primary shell. Zsh only serves as a fallback launcher.
 
 # === Nix environment ===
 if [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
   . "$HOME/.nix-profile/etc/profile.d/nix.sh"
 fi
 
-{{ if eq .chezmoi.os "linux" }}
-# Ensure system data dirs are in XDG_DATA_DIRS (flatpak may set it before nix.sh,
-# causing nix.sh to skip /usr/share — breaks GSettings, xdg-desktop-portal, icons, etc.)
-export XDG_DATA_DIRS="/usr/local/share:/usr/share:${XDG_DATA_DIRS:-}"
-{{ end }}
+# === Launch fish if available ===
+if command -v fish &>/dev/null; then
+  exec fish
+fi
 
-# === Locale ===
-export LANG=en_US.UTF-8
-export LC_CTYPE=zh_CN.UTF-8
-
-# === Editor ===
+# === Minimal zsh fallback (only if fish is unavailable) ===
 export EDITOR=nvim
 export VISUAL=nvim
-
-# === Go ===
-export GOPATH="$HOME/go"
-export GOBIN="$GOPATH/bin"
-export PATH="$GOBIN:$PATH"
-
-# === Rust ===
-export PATH="$HOME/.cargo/bin:$PATH"
-
-# === Python ===
-export UV_CACHE_DIR="$HOME/.cache/uv"
-
-{{ if or (eq .chezmoi.hostname "macbook") (contains "MacBook" .chezmoi.hostname) }}
-# === Huawei Work Environment (MacBook only) ===
-export HARMONYOS_SDK_HOME="$HOME/HarmonyOS-SDK"
-export DEVECO_STUDIO_HOME="/Applications/DevEco-Studio.app"
-export PATH="$DEVECO_STUDIO_HOME/Contents/bin:$PATH"
-{{ end }}
-
-# === Completion ===
-autoload -Uz compinit
-compinit -C
-
-# === Zsh plugins (installed via Nix home-manager) ===
-{{ if eq .chezmoi.os "linux" }}
-source "$HOME/.nix-profile/share/zsh-autosuggestions/zsh-autosuggestions.zsh" 2>/dev/null
-source "$HOME/.nix-profile/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" 2>/dev/null
-{{ else if eq .chezmoi.os "darwin" }}
-# macOS: try Nix profile first, then Homebrew
-if [ -f "$HOME/.nix-profile/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]; then
-  source "$HOME/.nix-profile/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
-elif [ -f /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh ]; then
-  source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-fi
-if [ -f "$HOME/.nix-profile/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]; then
-  source "$HOME/.nix-profile/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
-elif [ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
-  source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-fi
-{{ end }}
-
-# === Aliases ===
 alias ll='eza -la --icons --git'
-alias la='eza -a --icons'
-alias lt='eza --tree --icons --level=2'
 alias lg='lazygit'
-alias vi='nvim'
 alias v='nvim'
-
-{{ if or (eq .chezmoi.hostname "macbook") (contains "MacBook" .chezmoi.hostname) }}
-alias work='cd ~/Workspace/harmonyos-workspace'
-alias arkts='cd ~/Workspace/harmonyos-workspace && nvim .'
-{{ end }}
-
-alias exam-study='cd ~/Documents/exam-prep && nvim .'
-alias essay-practice='cd ~/Documents/exam-prep/essays && nvim'
-alias ai-lab='cd ~/Workspace/ai-learning && pixi shell'
-alias jupyter-lab='jupyter lab --notebook-dir=~/Workspace/ai-learning'
-alias hermes='cd ~/Workspace/hermes-agent && uv run python main.py'
-alias hermes-dev='cd ~/Workspace/hermes-agent && uv run python main.py --dev'
-alias obsidian-sync='cd ~/Documents/ObsidianVault && git add -A && git commit -m "sync: $(date +%Y-%m-%d)" && git push'
-alias obsidian-pull='cd ~/Documents/ObsidianVault && git pull'
-
-{{ if eq .chezmoi.os "linux" }}
-# === Fcitx5 Input Method (Wayland) ===
-export GTK_IM_MODULE=fcitx
-export QT_IM_MODULE=fcitx
-export XMODIFIERS=@im=fcitx
-export SDL_IM_MODULE=fcitx
-export INPUT_METHOD=fcitx
-
-{{ end }}
-
-# === Tool initialization ===
-eval "$(starship init zsh)"
-eval "$(zoxide init zsh)"
-source <(fzf --zsh)
-
-# === Key bindings ===
-bindkey -e
-bindkey '^R' fzf-history-widget
-bindkey '^T' fzf-file-widget
-bindkey '^[c' fzf-cd-widget
-
-# === Zellij (manual launch: type 'z' or 'zellij attach -c main') ===
-alias z='zellij attach -c main'
+eval "$(starship init zsh 2>/dev/null)"

@@ -7,4 +7,5 @@ in
 {
   "clash_subscription.age".publicKeys = allKeys;
   "github_token.age".publicKeys = allKeys;
+  "gitcode_token.age".publicKeys = allKeys;
 }

@@ -44,35 +44,45 @@ echo "  Nix mirrors configured (TUNA/SJTU)"
 
 # Configure system-level /etc/nix/nix.conf (daemon level — always respected)
 # Uses sed to replace existing lines so wrong values get corrected.
+# NOTE: sudo may fail with exit 2 when stdin is not a terminal (chezmoi apply).
+#       Each sudo call is guarded so set -e never kills the script on sudo failure.
 NIX_SUBSTITUTERS="https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org"
 NIX_TRUSTED_KEYS="cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
 
+# Run a sudo command; on failure (e.g. no tty), log and continue instead of crashing.
+try_sudo() { if "$@" 2>/dev/null; then return 0; else echo "  ⚠ sudo failed (credentials not cached?) — skipping"; return 1; fi; }
+
 if [ ! -f /etc/nix/nix.conf ]; then
-  sudo mkdir -p /etc/nix
-  sudo tee /etc/nix/nix.conf > /dev/null 2>&1 << SYSCONF
+  try_sudo mkdir -p /etc/nix
+  try_sudo tee /etc/nix/nix.conf > /dev/null << SYSCONF
 trusted-users = root $USER
 substituters = ${NIX_SUBSTITUTERS}
 trusted-public-keys = ${NIX_TRUSTED_KEYS}
 SYSCONF
-  echo "  /etc/nix/nix.conf created (trusted-users + substituters + keys)"
+  echo "  /etc/nix/nix.conf created"
 else
   if ! grep -q "trusted-users.*$USER" /etc/nix/nix.conf 2>/dev/null; then
-    echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
-    echo "  trusted-users configured"
+    if try_sudo bash -c "echo 'trusted-users = root $USER' >> /etc/nix/nix.conf"; then
+      echo "  trusted-users configured"
+    fi
   fi
   if grep -q "^substituters" /etc/nix/nix.conf 2>/dev/null; then
-    sudo sed -i "s|^substituters.*|substituters = ${NIX_SUBSTITUTERS}|" /etc/nix/nix.conf 2>/dev/null
-    echo "  substituters updated"
+    if try_sudo sed -i "s|^substituters.*|substituters = ${NIX_SUBSTITUTERS}|" /etc/nix/nix.conf; then
+      echo "  substituters updated"
+    fi
   else
-    echo "substituters = ${NIX_SUBSTITUTERS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
-    echo "  substituters configured"
+    if try_sudo bash -c "echo 'substituters = ${NIX_SUBSTITUTERS}' >> /etc/nix/nix.conf"; then
+      echo "  substituters configured"
+    fi
   fi
   if grep -q "^trusted-public-keys" /etc/nix/nix.conf 2>/dev/null; then
-    sudo sed -i "s|^trusted-public-keys.*|trusted-public-keys = ${NIX_TRUSTED_KEYS}|" /etc/nix/nix.conf 2>/dev/null
-    echo "  trusted-public-keys updated"
+    if try_sudo sed -i "s|^trusted-public-keys.*|trusted-public-keys = ${NIX_TRUSTED_KEYS}|" /etc/nix/nix.conf; then
+      echo "  trusted-public-keys updated"
+    fi
   else
-    echo "trusted-public-keys = ${NIX_TRUSTED_KEYS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
-    echo "  trusted-public-keys configured"
+    if try_sudo bash -c "echo 'trusted-public-keys = ${NIX_TRUSTED_KEYS}' >> /etc/nix/nix.conf"; then
+      echo "  trusted-public-keys configured"
+    fi
   fi
 fi
 {{ else if eq .chezmoi.os "darwin" }}
@@ -104,36 +114,44 @@ EOF
 echo "  Nix mirrors configured (TUNA/SJTU)"
 
 # Configure system-level /etc/nix/nix.conf (daemon level — always respected)
-# Uses sed to replace existing lines so wrong values get corrected.
+# NOTE: sudo may fail with exit 2 when stdin is not a terminal (chezmoi apply).
+#       Each sudo call is guarded so set -e never kills the script on sudo failure.
 NIX_SUBSTITUTERS="https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org"
 NIX_TRUSTED_KEYS="cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
 
+try_sudo() { if "$@" 2>/dev/null; then return 0; else echo "  ⚠ sudo failed — skipping"; return 1; fi; }
+
 if [ ! -f /etc/nix/nix.conf ]; then
-  sudo mkdir -p /etc/nix
-  sudo tee /etc/nix/nix.conf > /dev/null 2>&1 << SYSCONF
+  try_sudo mkdir -p /etc/nix
+  try_sudo tee /etc/nix/nix.conf > /dev/null << SYSCONF
 trusted-users = root $USER
 substituters = ${NIX_SUBSTITUTERS}
 trusted-public-keys = ${NIX_TRUSTED_KEYS}
 SYSCONF
-  echo "  /etc/nix/nix.conf created (trusted-users + substituters + keys)"
+  echo "  /etc/nix/nix.conf created"
 else
   if ! grep -q "trusted-users.*$USER" /etc/nix/nix.conf 2>/dev/null; then
-    echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
-    echo "  trusted-users configured"
+    if try_sudo bash -c "echo 'trusted-users = root $USER' >> /etc/nix/nix.conf"; then
+      echo "  trusted-users configured"
+    fi
   fi
   if grep -q "^substituters" /etc/nix/nix.conf 2>/dev/null; then
-    sudo sed -i '' "s|^substituters.*|substituters = ${NIX_SUBSTITUTERS}|" /etc/nix/nix.conf 2>/dev/null
-    echo "  substituters updated"
+    if try_sudo sed -i '' "s|^substituters.*|substituters = ${NIX_SUBSTITUTERS}|" /etc/nix/nix.conf; then
+      echo "  substituters updated"
+    fi
   else
-    echo "substituters = ${NIX_SUBSTITUTERS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
-    echo "  substituters configured"
+    if try_sudo bash -c "echo 'substituters = ${NIX_SUBSTITUTERS}' >> /etc/nix/nix.conf"; then
+      echo "  substituters configured"
+    fi
   fi
   if grep -q "^trusted-public-keys" /etc/nix/nix.conf 2>/dev/null; then
-    sudo sed -i '' "s|^trusted-public-keys.*|trusted-public-keys = ${NIX_TRUSTED_KEYS}|" /etc/nix/nix.conf 2>/dev/null
-    echo "  trusted-public-keys updated"
+    if try_sudo sed -i '' "s|^trusted-public-keys.*|trusted-public-keys = ${NIX_TRUSTED_KEYS}|" /etc/nix/nix.conf; then
+      echo "  trusted-public-keys updated"
+    fi
   else
-    echo "trusted-public-keys = ${NIX_TRUSTED_KEYS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
-    echo "  trusted-public-keys configured"
+    if try_sudo bash -c "echo 'trusted-public-keys = ${NIX_TRUSTED_KEYS}' >> /etc/nix/nix.conf"; then
+      echo "  trusted-public-keys configured"
+    fi
   fi
 fi
 {{ end }}

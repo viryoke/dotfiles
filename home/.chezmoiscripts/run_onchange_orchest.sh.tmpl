@@ -1,6 +1,9 @@
 #!/bin/bash
 set -uo pipefail
 
+# macOS doesn't set XDG_RUNTIME_DIR — default to empty so set -u doesn't crash
+: "${XDG_RUNTIME_DIR:=}"
+
 # ========================================
 # Dotfiles Orchestration Script
 # ========================================
@@ -20,98 +23,8 @@ echo "========================================"
 echo ""
 echo "── Phase 1: Configuring mirrors ──"
 
-# Nix binary cache mirrors (China) — ensures nix downloads use domestic CDN
-# substituters and trusted-public-keys are restricted/semi-restricted settings:
-# - In ~/.config/nix/nix.conf: substituters requires user in trusted-users
-# - In flake nixConfig: both require --accept-flake-config or trusted-users
-# Solution: write to /etc/nix/nix.conf (daemon level, always respected) AND user config.
-mkdir -p "$HOME/.config/nix"
-cat > "$HOME/.config/nix/nix.conf" << 'NIXCONF'
-experimental-features = nix-command flakes
-substituters = https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org
-trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
-NIXCONF
-
-# ── System-level /etc/nix/nix.conf (daemon-level, always respected) ──
-# Uses sed to replace existing lines (not grep+append) so wrong values get corrected.
-NIX_CONF_CHANGED=false
-NIX_SUBSTITUTERS="https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org"
-NIX_TRUSTED_KEYS="cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-
-if [ ! -f /etc/nix/nix.conf ]; then
-  sudo mkdir -p /etc/nix
-  sudo tee /etc/nix/nix.conf > /dev/null 2>&1 << SYSCONF
-trusted-users = root $(whoami)
-substituters = ${NIX_SUBSTITUTERS}
-trusted-public-keys = ${NIX_TRUSTED_KEYS}
-SYSCONF
-  echo "[nix] ✓ /etc/nix/nix.conf created" && NIX_CONF_CHANGED=true || echo "[nix] ⚠ creation failed"
-else
-  # trusted-users
-  if ! grep -q "trusted-users.*$(whoami)" /etc/nix/nix.conf 2>/dev/null; then
-    if grep -q "^trusted-users" /etc/nix/nix.conf 2>/dev/null; then
-      {{ if eq .chezmoi.os "darwin" -}}
-      sudo sed -i '' "s/^trusted-users.*/& $(whoami)/" /etc/nix/nix.conf 2>/dev/null
-      {{ else -}}
-      sudo sed -i "s/^trusted-users.*/& $(whoami)/" /etc/nix/nix.conf 2>/dev/null
-      {{ end -}}
-    else
-      echo "trusted-users = root $(whoami)" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
-    fi
-    echo "[nix] ✓ trusted-users updated" && NIX_CONF_CHANGED=true
-  fi
-  # substituters: sed replace or append
-  if grep -q "^substituters" /etc/nix/nix.conf 2>/dev/null; then
-    {{ if eq .chezmoi.os "darwin" -}}
-    sudo sed -i '' "s|^substituters.*|substituters = ${NIX_SUBSTITUTERS}|" /etc/nix/nix.conf 2>/dev/null
-    {{ else -}}
-    sudo sed -i "s|^substituters.*|substituters = ${NIX_SUBSTITUTERS}|" /etc/nix/nix.conf 2>/dev/null
-    {{ end -}}
-    echo "[nix] ✓ substituters updated" && NIX_CONF_CHANGED=true
-  else
-    echo "substituters = ${NIX_SUBSTITUTERS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
-    echo "[nix] ✓ substituters added" && NIX_CONF_CHANGED=true
-  fi
-  # trusted-public-keys: sed replace or append
-  if grep -q "^trusted-public-keys" /etc/nix/nix.conf 2>/dev/null; then
-    {{ if eq .chezmoi.os "darwin" -}}
-    sudo sed -i '' "s|^trusted-public-keys.*|trusted-public-keys = ${NIX_TRUSTED_KEYS}|" /etc/nix/nix.conf 2>/dev/null
-    {{ else -}}
-    sudo sed -i "s|^trusted-public-keys.*|trusted-public-keys = ${NIX_TRUSTED_KEYS}|" /etc/nix/nix.conf 2>/dev/null
-    {{ end -}}
-    echo "[nix] ✓ trusted-public-keys updated" && NIX_CONF_CHANGED=true
-  else
-    echo "trusted-public-keys = ${NIX_TRUSTED_KEYS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1
-    echo "[nix] ✓ trusted-public-keys added" && NIX_CONF_CHANGED=true
-  fi
-fi
-
-# Restart Nix daemon if config changed (only if daemon exists)
-if [ "$NIX_CONF_CHANGED" = true ]; then
-  {{ if eq .chezmoi.os "darwin" -}}
-  if launchctl print system/org.nixos.nix-daemon &>/dev/null; then
-    sudo launchctl kickstart -k system/org.nixos.nix-daemon 2>/dev/null && echo "[nix] ✓ daemon restarted"
-  else
-    echo "[nix] no daemon (single-user mode) — config applied immediately"
-  fi
-  {{ else -}}
-  if systemctl is-enabled nix-daemon.service &>/dev/null || systemctl is-enabled nix-daemon.socket &>/dev/null; then
-    sudo systemctl restart nix-daemon.service 2>/dev/null && echo "[nix] ✓ daemon restarted" \
-      || sudo systemctl restart nix-daemon.socket 2>/dev/null && echo "[nix] ✓ daemon socket restarted" \
-      || echo "[nix] ⚠ daemon restart failed"
-  else
-    # Single-user mode: remove stale socket if present
-    if [ -S /nix/var/nix/daemon-socket/socket ] 2>/dev/null; then
-      sudo rm -f /nix/var/nix/daemon-socket/socket 2>/dev/null && echo "[nix] ✓ stale socket removed" \
-        || echo "[nix] ⚠ run: sudo rm -f /nix/var/nix/daemon-socket/socket"
-    fi
-    echo "[nix] no daemon (single-user mode) — config applied immediately"
-  fi
-  {{ end -}}
-else
-  echo "[nix] ✓ config unchanged, no restart needed"
-fi
-echo "[mirrors] ✓ Nix: TUNA + SJTU"
+# Nix binary cache mirrors (China) — shared script handles user + system nix.conf
+bash "{{ .chezmoi.workingTree }}/scripts/configure-nix-mirrors.sh"
 
 # npm mirror (China)
 if command -v npm &>/dev/null || command -v node &>/dev/null; then
@@ -431,34 +344,37 @@ pids+=($!)
 ) &
 pids+=($!)
 
-# --- Ensure zsh is default shell ---
+# --- Ensure fish is default shell ---
 (
-  ZSH_PATH="$(command -v zsh 2>/dev/null)"
-  if [ -n "$ZSH_PATH" ]; then
+  FISH_PATH="$(command -v fish 2>/dev/null)"
+  if [ -n "$FISH_PATH" ]; then
     {{ if eq .chezmoi.os "linux" -}}
     CURRENT_SHELL=$(getent passwd "$USER" 2>/dev/null | cut -d: -f7)
-    if [ "$CURRENT_SHELL" != "$ZSH_PATH" ]; then
-      if ! grep -q "$ZSH_PATH" /etc/shells 2>/dev/null; then
-        echo "$ZSH_PATH" | sudo tee -a /etc/shells > /dev/null
+    if [ "$CURRENT_SHELL" != "$FISH_PATH" ]; then
+      if ! grep -q "$FISH_PATH" /etc/shells 2>/dev/null; then
+        echo "$FISH_PATH" | sudo tee -a /etc/shells > /dev/null
       fi
-      if chsh -s "$ZSH_PATH" 2>/dev/null; then
-        echo "[zsh] ✓ default shell changed to zsh"
+      if chsh -s "$FISH_PATH" 2>/dev/null; then
+        echo "[fish] ✓ default shell changed to fish"
       else
-        echo "[zsh] ⚠ chsh failed, run: sudo chsh -s $ZSH_PATH $USER"
+        echo "[fish] ⚠ chsh failed, run: sudo chsh -s $FISH_PATH $USER"
       fi
     else
-      echo "[zsh] ✓ already default"
+      echo "[fish] ✓ already default"
     fi
     {{ else if eq .chezmoi.os "darwin" -}}
     CURRENT_SHELL=$(dscl . -read /Users/"$USER" UserShell 2>/dev/null | awk '{print $2}')
-    if [ "$CURRENT_SHELL" != "$ZSH_PATH" ]; then
-      if chsh -s "$ZSH_PATH" 2>/dev/null; then
-        echo "[zsh] ✓ default shell changed to zsh"
+    if [ "$CURRENT_SHELL" != "$FISH_PATH" ]; then
+      if ! grep -q "$FISH_PATH" /etc/shells 2>/dev/null; then
+        echo "$FISH_PATH" | sudo tee -a /etc/shells > /dev/null
+      fi
+      if chsh -s "$FISH_PATH" 2>/dev/null; then
+        echo "[fish] ✓ default shell changed to fish"
       else
-        echo "[zsh] ⚠ chsh failed"
+        echo "[fish] ⚠ chsh failed"
       fi
     else
-      echo "[zsh] ✓ already default"
+      echo "[fish] ✓ already default"
     fi
     {{ end -}}
   fi

@@ -93,7 +93,7 @@ flowchart TB
         direction LR
         P4A["rime-build<br/>(Linux)"]
         P4B["claude-code<br/>(npm)"]
-        P4C["zsh 设为<br/>默认 shell"]
+        P4C["fish 设为<br/>默认 shell"]
     end
 
     P0 --> chezmoi_apply
@@ -131,15 +131,15 @@ graph TB
 
     subgraph modules_detail["模块详情 (modules/)"]
         direction LR
-        MS["shared/<br/>shell · editors · theme<br/>dev-rust · dev-python<br/>dev-go · dev-java<br/>dev-js · dev-cc · dev-lua<br/>ai-ml · exam-prep"]
+        MS["shared/<br/>packages · editors · theme<br/>dev-rust · dev-python<br/>dev-go · dev-java<br/>dev-js · dev-cc · dev-lua<br/>ai-tools · exam-prep"]
         ML["linux/<br/>packages · clash-verge<br/>secrets"]
         MD["darwin/<br/>packages"]
     end
 
     subgraph chezmoi_src["chezmoi Source (home/)"]
         direction TB
-        CFG["dot_config/<br/>ghostty · nvim · zellij<br/>starship · yazi · fcitx5"]
-        DOT["dot_zshrc.tmpl<br/>dot_gitconfig.tmpl<br/>dot_zshenv.tmpl"]
+        CFG["dot_config/<br/>alacritty · nvim · zellij<br/>starship · yazi · fcitx5"]
+        DOT["fish/config.fish.tmpl<br/>dot_zshrc.tmpl · dot_zshenv.tmpl<br/>dot_gitconfig.tmpl"]
         SCR[".chezmoiscripts/<br/>生命周期钩子"]
         DAT[".chezmoidata/<br/>packages.yaml"]
     end
@@ -157,7 +157,11 @@ graph TB
 一条命令 — CachyOS 和 macOS 通用：
 
 ```bash
+# GitHub（推荐）
 curl -fsSL https://raw.githubusercontent.com/viryoke/dotfiles/main/scripts/bootstrap.sh | bash
+
+# GitCode 镜像（国内加速）
+curl -fsSL https://gitcode.com/viryoke/dotfiles/raw/main/scripts/bootstrap.sh | bash
 ```
 
 脚本会自动完成以下步骤：
@@ -177,6 +181,10 @@ curl -fsSL https://raw.githubusercontent.com/viryoke/dotfiles/main/scripts/boots
 
 ```bash
 git clone https://github.com/viryoke/dotfiles.git ~/dotfiles
+
+# 配置双推送（GitHub + GitCode）
+git -C ~/dotfiles remote set-url --add --push origin https://github.com/viryoke/dotfiles.git
+git -C ~/dotfiles remote set-url --add --push origin https://gitcode.com/viryoke/dotfiles.git
 
 # 安装 Nix（单用户）
 sh <(curl -L https://nixos.org/nix/install) --no-daemon
@@ -216,6 +224,10 @@ brew install git chezmoi
 
 git clone https://github.com/viryoke/dotfiles.git ~/dotfiles
 
+# 配置双推送（GitHub + GitCode）
+git -C ~/dotfiles remote set-url --add --push origin https://github.com/viryoke/dotfiles.git
+git -C ~/dotfiles remote set-url --add --push origin https://gitcode.com/viryoke/dotfiles.git
+
 sh <(curl -L https://nixos.org/nix/install) --no-daemon
 source ~/.nix-profile/etc/profile.d/nix.sh
 
@@ -254,10 +266,9 @@ chezmoi apply
 │
 ├── modules/                            可复用的 Nix 模块
 │   ├── shared/                         跨平台模块
-│   │   ├── shell.nix                     zsh 插件、starship、CLI 工具
+│   │   ├── packages.nix                  核心 CLI 工具、shell、starship
 │   │   ├── editors.nix                   neovim、tree-sitter、ripgrep
 │   │   ├── theme.nix                     JetBrains Mono + Noto CJK 字体
-│   │   ├── packages.nix                  核心 CLI 工具
 │   │   ├── dev-rust.nix                  rustc、cargo、rust-analyzer
 │   │   ├── dev-python.nix               uv、pixi、ruff
 │   │   ├── dev-go.nix                    go、gopls、golangci-lint、delve
@@ -265,10 +276,9 @@ chezmoi apply
 │   │   ├── dev-js.nix                    bun、node、typescript
 │   │   ├── dev-cc.nix                    gcc、clang、cmake
 │   │   ├── dev-lua.nix                   lua、lua-language-server、stylua
-│   │   ├── ai-ml.nix                     jupyter、ollama (Linux)
+│   │   ├── ai-tools.nix                  jupyter、ollama (Linux)、opencode
 │   │   ├── ai-learning.nix               PyPI 镜像配置（pixi）
-│   │   ├── exam-prep.nix                 pandoc、texlive
-│   │   └── hermes-agent.nix              （占位 — 别名在 .zshrc 中）
+│   │   └── exam-prep.nix                 pandoc、texlive
 │   ├── linux/
 │   │   ├── packages.nix                  yazi、zellij、cliphist
 │   │   ├── clash-verge.nix               代理客户端
@@ -278,19 +288,20 @@ chezmoi apply
 │
 ├── home/                               chezmoi 源状态 → ~/
 │   ├── dot_config/                     → ~/.config/
-│   │   ├── ghostty/config.tmpl           终端（Gruvbox 主题、平台快捷键）
+│   │   ├── alacritty/alacritty.toml.tmpl 终端（Catppuccin Mocha、JetBrains Mono）
 │   │   ├── nvim/                         Neovim（LazyVim 发行版）
 │   │   │   ├── init.lua                    插件配置 + lazy.nvim 引导
-│   │   │   └── lua/plugins/gruvbox.lua     Gruvbox Material 主题
+│   │   │   └── lua/plugins/catppuccin.lua  Catppuccin Mocha 主题
 │   │   ├── zellij/                       终端复用器
 │   │   │   ├── config.kdl                  主题 + 行为配置
 │   │   │   ├── keybindings.kdl             Vim 风格快捷键
 │   │   │   └── layouts/                    default.kdl、dev.kdl
-│   │   ├── starship.toml                 Shell 提示符（Gruvbox powerline）
+│   │   ├── fish/config.fish.tmpl          Fish shell（主 shell：别名、环境变量、工具初始化）
+│   │   ├── starship.toml                 Shell 提示符（Catppuccin Mocha powerline）
 │   │   ├── yazi/theme.toml               文件管理器主题
 │   │   └── fcitx5/                       输入法（仅 Linux）
-│   ├── dot_zshrc.tmpl                  → ~/.zshrc（模板化）
-│   ├── dot_zshenv.tmpl                 → ~/.zshenv（XDG、locale、PATH）
+│   ├── dot_zshrc.tmpl                  → ~/.zshrc（fallback：加载 Nix 后 exec fish）
+│   ├── dot_zshenv.tmpl                 → ~/.zshenv（XDG、locale、PATH — 非 shell 进程用）
 │   ├── dot_gitconfig.tmpl              → ~/.gitconfig（delta、gh 认证）
 │   ├── dot_bashrc.tmpl                 → ~/.bashrc（备用）
 │   ├── dot_local/                      → ~/.local/
@@ -308,9 +319,11 @@ chezmoi apply
 ├── secrets/                            agenix 加密的密钥（.age）
 │   ├── secrets.nix                       公钥 → 密钥映射
 │   ├── github_token.age                  GitHub CLI 认证
+│   ├── gitcode_token.age                 GitCode 认证
 │   └── clash_subscription.age            代理订阅 URL
 └── scripts/
     ├── bootstrap.sh                    一键安装脚本
+    ├── configure-nix-mirrors.sh        Nix 镜像配置（共享）
     ├── doctor.sh                       环境健康检查
     └── install-packages.sh             交互式包安装（仅 Linux）
 ```
@@ -319,28 +332,17 @@ chezmoi apply
 
 ### 终端与 Shell
 
-#### Ghostty — GPU 加速终端模拟器
+#### Alacritty — GPU 加速终端模拟器
 
-> 配置文件：`home/dot_config/ghostty/config.tmpl` → `~/.config/ghostty/config`
+> 配置文件：`home/dot_config/alacritty/alacritty.toml.tmpl` → `~/.config/alacritty/alacritty.toml`
 >
-> 主题：Gruvbox Material Dark · 字体：JetBrains Mono Nerd Font 14pt · 透明度：0.95
+> 主题：Catppuccin Mocha · 字体：JetBrains Mono Nerd Font 14pt · 透明度：0.95
 
-| 快捷键 | 功能 | Linux | macOS |
-|--------|------|-------|-------|
-| 新建标签页 | 打开新标签 | `Ctrl+Shift+T` | `Cmd+Shift+T` |
-| 关闭标签页 | 关闭当前标签 | `Ctrl+Shift+W` | `Cmd+Shift+W` |
-| 右分屏 | 向右分割面板 | `Ctrl+Shift+Enter` | `Cmd+Shift+Enter` |
-| 下分屏 | 向下分割面板 | `Ctrl+Shift+O` | `Cmd+Shift+O` |
-| 面板导航 | 左/右/上/下切换 | `Ctrl+Shift+H/L/K/J` | `Cmd+Shift+H/L/K/J` |
-| 放大字体 | 字号 +1 | `Ctrl+=` | `Cmd+=` |
-| 缩小字体 | 字号 -1 | `Ctrl+-` | `Cmd+-` |
-| 重置字体 | 恢复默认字号 | `Ctrl+0` | `Cmd+0` |
+#### Fish — 主 Shell
 
-#### Zsh — 主 Shell
-
-> 配置文件：`home/dot_zshrc.tmpl` → `~/.zshrc`
+> 配置文件：`home/dot_config/fish/config.fish.tmpl` → `~/.config/fish/config.fish`
 >
-> 插件：zsh-autosuggestions · zsh-syntax-highlighting · fzf · zoxide
+> 内置语法高亮 · 自动建议 · fzf · zoxide · starship
 
 | 快捷键 | 功能 |
 |--------|------|
@@ -348,7 +350,7 @@ chezmoi apply
 | `Ctrl+T` | fzf 文件搜索（插入路径） |
 | `Alt+C` | fzf 目录跳转（cd） |
 | `Tab` | 自动补全（支持 fzf 模糊匹配） |
-| `→` | 接受灰色自动建议（autosuggestions） |
+| `→` | 接受灰色自动建议 |
 
 | 别名 | 实际命令 | 说明 |
 |------|----------|------|
@@ -359,17 +361,19 @@ chezmoi apply
 | `v` / `vi` | `nvim` | 编辑器 |
 | `z` | `zellij attach -c main` | 连接 zellij 主会话 |
 
+> `.zshrc` 仅作为 fallback：加载 Nix 环境后自动 `exec fish`。
+
 #### Starship — 跨 Shell 提示符
 
 > 配置文件：`home/dot_config/starship.toml` → `~/.config/starship.toml`
 >
-> 样式：Gruvbox Material Dark powerline，显示 OS 图标 / 用户 / 目录 / Git / 语言版本 / Nix / 时间
+> 样式：Catppuccin Mocha powerline，显示 OS 图标 / 用户 / 目录 / Git / 语言版本 / Nix / 时间
 
 #### Zellij — 终端复用器
 
 > 配置文件：`home/dot_config/zellij/` → `~/.config/zellij/`
 >
-> 主题：gruvbox-material-dark · 模式：简化 UI · 退出行为：detach
+> 主题：Catppuccin Mocha · 模式：简化 UI · 退出行为：detach
 
 **两种布局：**
 
@@ -405,7 +409,7 @@ chezmoi apply
 
 > 配置文件：`home/dot_config/nvim/` → `~/.config/nvim/`
 >
-> 基于 [LazyVim](https://www.lazyvim.org/) 发行版 · 主题：gruvbox-material（medium 背景、启用斜体）
+> 基于 [LazyVim](https://www.lazyvim.org/) 发行版 · 主题：Catppuccin Mocha
 
 **已启用的语言支持：**
 Python · Go · Rust · Java · TypeScript · JSON · YAML · Markdown · Docker · Terraform
@@ -447,7 +451,7 @@ Python · Go · Rust · Java · TypeScript · JSON · YAML · Markdown · Docker
 
 > 配置文件：`home/dot_config/yazi/theme.toml` → `~/.config/yazi/theme.toml`
 >
-> 主题：Gruvbox Material Dark
+> 主题：Catppuccin Mocha
 
 | 快捷键 | 功能 |
 |--------|------|
@@ -487,7 +491,7 @@ Python · Go · Rust · Java · TypeScript · JSON · YAML · Markdown · Docker
 
 ### 现代 CLI 替代工具
 
-> 由 `modules/shared/packages.nix` + `modules/shared/shell.nix` 安装
+> 由 `modules/shared/packages.nix` 安装
 
 | 传统命令 | 替代工具 | 说明 |
 |----------|----------|------|
@@ -549,7 +553,7 @@ graph TB
         S["<b>dev-js</b><br/>bun · node · typescript<br/>typescript-language-server"]
         L["<b>dev-lua</b><br/>lua · lua-language-server<br/>stylua"]
         C["<b>dev-cc</b><br/>gcc · clang-tools · cmake<br/>gnumake · pkg-config"]
-        A["<b>ai-ml</b><br/>jupyter · ollama (Linux)"]
+        A["<b>ai-tools</b><br/>jupyter · ollama (Linux)<br/>opencode"]
         E["<b>exam-prep</b><br/>pandoc · texlive"]
     end
 
@@ -568,7 +572,7 @@ graph TB
 | `dev-js.nix` | JS/TS | bun, node, typescript, typescript-language-server |
 | `dev-lua.nix` | Lua | lua, lua-language-server, stylua |
 | `dev-cc.nix` | C/C++ | gcc, clang-tools, cmake, gnumake, pkg-config |
-| `ai-ml.nix` | AI/ML | jupyter, ollama (仅 Linux) |
+| `ai-tools.nix` | AI/ML | jupyter, ollama (仅 Linux), opencode |
 | `exam-prep.nix` | 写作排版 | pandoc, texlive (scheme-small) |
 
 > **注意**：`dev-python` 仅安装包管理器和 linter（uv, pixi, ruff），Python 本身通过 uv/pixi 按需管理。`dev-go` 使用 `programs.go.enable = true` 由 home-manager 管理 Go 语言。
@@ -583,7 +587,7 @@ graph TB
 | **grim + slurp** | 截图工具 |
 | **swww** | 壁纸守护进程 |
 | **wlogout** | 注销/锁屏/重启菜单 |
-| **mako** | 通知守护进程（Gruvbox 主题） |
+| **mako** | 通知守护进程（Catppuccin 主题） |
 | **rofi-wayland** | 应用启动器 + 菜单脚本 |
 
 #### Rofi 菜单快捷方式
@@ -603,7 +607,7 @@ graph TB
 
 **Linux (AUR)：** 百度网盘
 
-**macOS (Homebrew Cask)：** Chrome · Ghostty · Telegram · Clash Verge Rev · 百度网盘 · Obsidian · Raycast · Stats
+**macOS (Homebrew Cask)：** Chrome · Alacritty · Telegram · Clash Verge Rev · 百度网盘 · Obsidian · Raycast · Stats
 
 ## 编排管线
 
@@ -614,7 +618,7 @@ graph TB
 | **Phase 1** 配置镜像 | 串行 | Nix 二进制缓存 → TUNA/SJTU、npm → npmmirror |
 | **Phase 2** Nix + 密钥 + 代理 | 串行 | home-manager switch → agenix 解密 → gh auth → clash-verge 自启 + TUN → 代理就绪检查 |
 | **Phase 3** 批量安装包 | **并行** | pacman + AUR + flatpak (Linux) / brew formulae + casks (macOS) |
-| **Phase 4** 安装后配置 | **并行** | rime-build (Linux) + claude-code (npm) + zsh 设为默认 shell |
+| **Phase 4** 安装后配置 | **并行** | rime-build (Linux) + claude-code (npm) + fish 设为默认 shell |
 
 > Phase 3 和 Phase 4 中各子任务并发执行，全部完成后再进入下一阶段。Phase 2 结束后会检查代理是否就绪，若未就绪会提示等待或跳过。
 
@@ -625,6 +629,7 @@ graph TB
 | 密钥 | 用途 | 解密路径 |
 |------|------|----------|
 | `github_token.age` | GitHub CLI 认证 | `$XDG_RUNTIME_DIR/agenix/github_token` |
+| `gitcode_token.age` | GitCode 认证 | `$XDG_RUNTIME_DIR/agenix/gitcode_token` |
 | `clash_subscription.age` | 代理订阅 URL | `$XDG_RUNTIME_DIR/agenix/clash_subscription` |
 
 两台机器（台式机 + 笔记本的 SSH 公钥）均可解密。
@@ -671,7 +676,7 @@ flowchart LR
 
 | 组件 | 镜像 | 配置位置 |
 |------|------|----------|
-| Nix 二进制缓存 | TUNA + SJTU | `run_onchange_orchest.sh` |
+| Nix 二进制缓存 | TUNA + SJTU | `scripts/configure-nix-mirrors.sh` |
 | npm 仓库 | npmmirror | `run_onchange_orchest.sh` |
 | PyPI (pixi) | TUNA | `modules/shared/ai-learning.nix` |
 | Claude Code | npm (npmmirror) | `run_onchange_orchest.sh` |
@@ -772,10 +777,10 @@ chezmoi apply
 ### 场景四：新增 Shell 别名或环境变量
 
 ```bash
-# 别名：编辑 home/dot_zshrc.tmpl
-chezmoi edit ~/.zshrc
+# 别名 / 交互式环境变量：编辑 fish 配置
+chezmoi edit ~/.config/fish/config.fish
 
-# 环境变量：编辑 home/dot_zshenv.tmpl
+# 非 shell 进程需要的环境变量：编辑 zshenv
 chezmoi edit ~/.zshenv
 
 # 部署
@@ -824,7 +829,7 @@ flowchart TD
     IGNORE --> APPLY
 
     Q3 -->|否| Q4{"别名/环境变量？"}
-    Q4 -->|是| EDIT["chezmoi edit ~/.zshrc<br/>或 ~/.zshenv"]
+    Q4 -->|是| EDIT["chezmoi edit<br/>~/.config/fish/config.fish<br/>或 ~/.zshenv"]
     EDIT --> APPLY
 
     Q4 -->|否| Q5{"密钥？"}
@@ -841,7 +846,7 @@ flowchart TD
 
 ```bash
 # 1. 编辑配置文件
-chezmoi edit ~/.config/ghostty/config     # 自动打开源文件
+chezmoi edit ~/.config/alacritty/alacritty.toml  # 自动打开源文件
 
 # 2. 预览变更（对比当前文件与源状态）
 chezmoi diff                               # 查看所有差异
@@ -859,6 +864,14 @@ git push
 ```
 
 ### 双机同步
+
+仓库同时推送至 GitHub 和 GitCode，`git push` 一次同步两个平台：
+
+```
+origin (fetch) → https://github.com/viryoke/dotfiles.git
+origin (push)  → https://github.com/viryoke/dotfiles.git
+origin (push)  → https://gitcode.com/viryoke/dotfiles.git
+```
 
 ```mermaid
 sequenceDiagram
@@ -901,7 +914,7 @@ chezmoi apply    # 编排管线会自动运行 home-manager switch
 
 检查项目包括：
 - ✅ 核心工具：chezmoi、nix、git
-- ✅ Shell：zsh、starship、zellij
+- ✅ Shell：fish、starship、zellij
 - ✅ 编辑器：neovim、lazygit
 - ✅ 开发工具：go、python3、uv、rustc、cargo、java、bun、node、lua
 - ✅ CLI 工具：ripgrep、fd、fzf、eza、zoxide、bat、yazi、jq
@@ -955,34 +968,35 @@ ssh-add ~/.ssh/id_ed25519
 
 ## 主题
 
-**Gruvbox Material Dark** — 在所有视觉组件中保持一致：
+**Catppuccin Mocha** — 在所有视觉组件中保持一致：
 
 ```mermaid
 graph LR
-    subgraph 主题一致性["Gruvbox Material Dark"]
-        T["Ghostty<br/>终端"]
+    subgraph 主题一致性["Catppuccin Mocha"]
+        T["Alacritty<br/>终端"]
         N["Neovim<br/>编辑器"]
         S["Starship<br/>提示符"]
         Z["Zellij<br/>复用器"]
         Y["Yazi<br/>文件管理器"]
+        F["Fish<br/>语法高亮"]
         R["Rofi<br/>启动器"]
         M["Mako<br/>通知"]
-        F["fcitx5<br/>输入法"]
     end
 
-    style 主题一致性 fill:#282828,color:#ebdbb2
+    style 主题一致性 fill:#1e1e2e,color:#cdd6f4
 ```
 
 | 颜色 | 色值 | 用途 |
 |------|------|------|
-| 背景 | `#282828` | 终端/编辑器/复用器背景 |
-| 前景 | `#ebdbb2` | 正文文字 |
-| 红色 | `#fb4934` | 错误、删除 |
-| 绿色 | `#b8bb26` | 成功、普通模式 |
-| 黄色 | `#fabd2f` | 警告、高亮 |
-| 蓝色 | `#83a598` | 信息、目录 |
-| 紫色 | `#d3869b` | 特殊标记 |
-| 橙色 | `#fe8019` | 时间、强调 |
+| Base | `#1e1e2e` | 终端/编辑器/复用器背景 |
+| Text | `#cdd6f4` | 正文文字 |
+| Red | `#f38ba8` | 错误、删除 |
+| Green | `#a6e3a1` | 成功、普通模式 |
+| Yellow | `#f9e2af` | 警告、高亮 |
+| Blue | `#89b4fa` | 信息、目录、命令 |
+| Mauve | `#cba6f7` | 特殊标记、提示符 |
+| Peach | `#fab387` | 时间、强调 |
+| Surface0 | `#313244` | 选中背景、对比面 |
 
 字体：**JetBrains Mono Nerd Font**（14pt，加粗渲染）+ **Noto Sans CJK**（中日韩文字覆盖）。
 

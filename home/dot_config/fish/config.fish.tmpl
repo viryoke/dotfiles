@@ -1,0 +1,167 @@
+# ~/.config/fish/config.fish — Managed by chezmoi
+# Shell: Fish | Theme: Catppuccin Mocha
+
+# ============================================
+# Environment Variables
+# ============================================
+
+# --- XDG Base Directories ---
+set -gx XDG_CONFIG_HOME "$HOME/.config"
+set -gx XDG_DATA_HOME "$HOME/.local/share"
+set -gx XDG_CACHE_HOME "$HOME/.cache"
+set -gx XDG_STATE_HOME "$HOME/.local/state"
+
+# --- Cross-platform PATH ---
+{{ if eq .chezmoi.os "linux" -}}
+fish_add_path -gP $HOME/.nix-profile/bin $HOME/.local/bin /usr/local/bin
+{{ else if eq .chezmoi.os "darwin" -}}
+fish_add_path -gP $HOME/.nix-profile/bin /opt/homebrew/bin $HOME/.local/bin
+{{ end -}}
+
+# --- Locale ---
+set -gx LANG en_US.UTF-8
+set -gx LC_CTYPE zh_CN.UTF-8
+{{ if eq .chezmoi.os "darwin" -}}
+# Fix locale on macOS (OrbStack may inject broken LC_ALL)
+set -gx LC_ALL en_US.UTF-8
+{{ end -}}
+
+# --- Editor ---
+set -gx EDITOR nvim
+set -gx VISUAL nvim
+
+# --- Nix environment ---
+if test -e "$HOME/.nix-profile/etc/profile.d/nix-daemon.fish"
+    source "$HOME/.nix-profile/etc/profile.d/nix-daemon.fish"
+else if test -e "$HOME/.nix-profile/etc/profile.d/nix.fish"
+    source "$HOME/.nix-profile/etc/profile.d/nix.fish"
+end
+
+{{ if eq .chezmoi.os "linux" -}}
+# --- Flatpak paths ---
+set -gx XDG_DATA_DIRS "/var/lib/flatpak/exports/share:$HOME/.local/share/flatpak/exports/share:$XDG_DATA_DIRS"
+# Ensure system data dirs (GSettings, xdg-desktop-portal, icons, etc.)
+set -gx XDG_DATA_DIRS "/usr/local/share:/usr/share:$XDG_DATA_DIRS"
+
+# --- Fcitx5 Input Method (Wayland) ---
+set -gx GTK_IM_MODULE fcitx
+set -gx QT_IM_MODULE fcitx
+set -gx XMODIFIERS @im=fcitx
+set -gx SDL_IM_MODULE fcitx
+set -gx INPUT_METHOD fcitx
+{{ end -}}
+
+# --- Go ---
+set -gx GOPATH "$HOME/go"
+set -gx GOBIN "$GOPATH/bin"
+fish_add_path -gP $GOBIN
+
+# --- Rust ---
+fish_add_path -gP $HOME/.cargo/bin
+
+# --- Python ---
+set -gx UV_CACHE_DIR "$HOME/.cache/uv"
+
+# --- npm global (user-local) ---
+set -gx npm_config_prefix "$HOME/.npm-global"
+fish_add_path -gP $HOME/.npm-global/bin
+
+{{ if eq .chezmoi.os "darwin" -}}
+set -gx HOMEBREW_NO_AUTO_UPDATE 1
+{{ end -}}
+
+{{ if or (eq .chezmoi.hostname "macbook") (contains "MacBook" .chezmoi.hostname) -}}
+# --- Huawei Work Environment (MacBook only) ---
+set -gx HARMONYOS_SDK_HOME "$HOME/HarmonyOS-SDK"
+set -gx DEVECO_STUDIO_HOME "/Applications/DevEco-Studio.app"
+fish_add_path -gP $DEVECO_STUDIO_HOME/Contents/bin
+{{ end -}}
+
+# ============================================
+# Aliases
+# ============================================
+alias ll='eza -la --icons --git'
+alias la='eza -a --icons'
+alias lt='eza --tree --icons --level=2'
+alias lg='lazygit'
+alias vi='nvim'
+alias v='nvim'
+alias z='zellij attach -c main'
+
+{{ if or (eq .chezmoi.hostname "macbook") (contains "MacBook" .chezmoi.hostname) -}}
+alias work='cd ~/Workspace/harmonyos-workspace'
+alias arkts='cd ~/Workspace/harmonyos-workspace && nvim .'
+{{ end -}}
+
+alias exam-study='cd ~/Documents/exam-prep && nvim .'
+alias essay-practice='cd ~/Documents/exam-prep/essays && nvim'
+alias ai-lab='cd ~/Workspace/ai-learning && pixi shell'
+alias jupyter-lab='jupyter lab --notebook-dir=~/Workspace/ai-learning'
+alias obsidian-sync='cd ~/Documents/ObsidianVault && git add -A && git commit -m "sync: $(date +%Y-%m-%d)" && git push'
+alias obsidian-pull='cd ~/Documents/ObsidianVault && git pull'
+
+# ============================================
+# Tool Initialization
+# ============================================
+
+# --- Starship prompt ---
+if command -v starship &>/dev/null
+    starship init fish | source
+end
+
+# --- Zoxide (cd replacement) ---
+if command -v zoxide &>/dev/null
+    zoxide init fish | source
+end
+
+# --- Fzf (fuzzy finder) ---
+if command -v fzf &>/dev/null
+    fzf --fish | source
+end
+
+# --- Fzf theme: Catppuccin Mocha ---
+set -gx FZF_DEFAULT_OPTS "
+  --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
+  --color=fg:#cdd6f4,header:#f38ba8,info:#cba6f7,pointer:#f5e0dc \
+  --color=marker:#b4befe,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8 \
+  --color=selected-bg:#45475a \
+  --multi"
+
+# ============================================
+# Fish Syntax Colors — Catppuccin Mocha
+# ============================================
+# Base
+set -g fish_color_normal cdd6f4
+set -g fish_color_command 89b4fa
+set -g fish_color_param cdd6f4
+set -g fish_color_keyword f38ba8
+set -g fish_color_quote a6e3a1
+set -g fish_color_redirection f5c2e7
+set -g fish_color_end fab387
+set -g fish_color_error f38ba8
+set -g fish_color_gray 6c7086
+set -g fish_color_selection --background=313244
+set -g fish_color_search_match --background=313244
+set -g fish_color_operator f5c2e7
+set -g fish_color_escape f38ba8
+set -g fish_color_autosuggestion 6c7086
+set -g fish_color_cancel f38ba8
+set -g fish_color_option 94e2d5
+set -g fish_color_comment 6c7086 --italic
+
+# Pager (completions, also used by fzf fish integration)
+set -g fish_pager_color_progress 6c7086
+set -g fish_pager_color_background 1e1e2e
+set -g fish_pager_color_prefix 89b4fa
+set -g fish_pager_color_completion cdd6f4
+set -g fish_pager_color_description 6c7086
+set -g fish_pager_color_selected_background --background=313244
+set -g fish_pager_color_selected_prefix b4befe
+set -g fish_pager_color_selected_completion cdd6f4
+set -g fish_pager_color_selected_description a6adc8
+
+# ============================================
+# Greeting
+# ============================================
+# Disable default fish greeting
+set -g fish_greeting

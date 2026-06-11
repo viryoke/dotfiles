@@ -1,16 +1,16 @@
-# Starship prompt - Gruvbox Material Dark
+# Starship prompt — Catppuccin Mocha
 
 format = """
-[░▒▓](#a89984)\
-[  ](bg:#a89984 fg:#282828)\
+[░▒▓](#a6adc8)\
+[  ](bg:#a6adc8 fg:#1e1e2e)\
 $os\
 $username\
-[](fg:#a89984 bg:#665c54)\
+[](fg:#a6adc8 bg:#6c7086)\
 $directory\
-[](fg:#665c54 bg:#458588)\
+[](fg:#6c7086 bg:#89b4fa)\
 $git_branch\
 $git_status\
-[](fg:#458588 bg:#b57614)\
+[](fg:#89b4fa bg:#f9e2af)\
 $c\
 $rust\
 $golang\
@@ -18,44 +18,49 @@ $java\
 $python\
 $nodejs\
 $lua\
-[](fg:#b57614 bg:#79740e)\
+[](fg:#f9e2af bg:#a6e3a1)\
 $docker_context\
 $conda\
-[](fg:#79740e bg:#427b58)\
+[](fg:#a6e3a1 bg:#94e2d5)\
 $nix_shell\
-[](fg:#427b58 bg:#d65d0e)\
+[](fg:#94e2d5 bg:#fab387)\
 $time\
-[ ](fg:#d65d0e)\
+[ ](fg:#fab387)\
 $line_break$character"""
 
-palette = 'gruvbox_dark'
+palette = 'catppuccin_mocha'
 
-[palettes.gruvbox_dark]
-dark0_hard = '#1d2021'
-dark0 = '#282828'
-dark0_soft = '#32302f'
-dark1 = '#3c3836'
-dark2 = '#504945'
-dark3 = '#665c54'
-dark4 = '#7c6f64'
-light0_hard = '#f9f5d7'
-light0 = '#fbf1c7'
-light0_soft = '#f2e5bc'
-light1 = '#ebdbb2'
-light2 = '#d5c4a1'
-light3 = '#bdae93'
-light4 = '#a89984'
-bright_red = '#fb4934'
-bright_green = '#b8bb26'
-bright_yellow = '#fabd2f'
-bright_blue = '#83a598'
-bright_purple = '#d3869b'
-bright_aqua = '#8ec07c'
-bright_orange = '#fe8019'
+[palettes.catppuccin_mocha]
+rosewater = '#f5e0dc'
+flamingo = '#f2cdcd'
+pink = '#f5c2e7'
+mauve = '#cba6f7'
+red = '#f38ba8'
+maroon = '#eba0ac'
+peach = '#fab387'
+yellow = '#f9e2af'
+green = '#a6e3a1'
+teal = '#94e2d5'
+sky = '#89dceb'
+sapphire = '#74c7ec'
+blue = '#89b4fa'
+lavender = '#b4befe'
+text = '#cdd6f4'
+subtext1 = '#bac2de'
+subtext0 = '#a6adc8'
+overlay2 = '#9399b2'
+overlay1 = '#7f849c'
+overlay0 = '#6c7086'
+surface2 = '#585b70'
+surface1 = '#45475a'
+surface0 = '#313244'
+base = '#1e1e2e'
+mantle = '#181825'
+crust = '#11111b'
 
 [os]
 disabled = false
-style = "bg:#a89984 fg:#282828"
+style = "bg:#a6adc8 fg:#1e1e2e"
 
 [os.symbols]
 Linux = " "
@@ -64,78 +69,78 @@ Windows = " "
 
 [username]
 show_always = true
-style_user = "bg:#a89984 fg:#282828"
-style_root = "bg:#a89984 fg:#282828"
+style_user = "bg:#a6adc8 fg:#1e1e2e"
+style_root = "bg:#a6adc8 fg:#1e1e2e"
 format = '[ $user ]($style)'
 
 [directory]
-style = "fg:#ebdbb2 bg:#665c54"
+style = "fg:#cdd6f4 bg:#6c7086"
 format = "[ $path ]($style)"
 truncation_length = 3
 truncation_symbol = "…/"
 
 [git_branch]
 symbol = ""
-style = "fg:#ebdbb2 bg:#458588"
+style = "fg:#1e1e2e bg:#89b4fa"
 format = '[ $symbol $branch ]($style)'
 
 [git_status]
-style = "fg:#ebdbb2 bg:#458588"
+style = "fg:#1e1e2e bg:#89b4fa"
 format = '[$all_status$ahead_behind ]($style)'
 
 [python]
 symbol = ""
-style = "fg:#282828 bg:#b57614"
+style = "fg:#1e1e2e bg:#f9e2af"
 format = '[ $symbol ($version) ]($style)'
 
 [golang]
 symbol = ""
-style = "fg:#282828 bg:#b57614"
+style = "fg:#1e1e2e bg:#f9e2af"
 format = '[ $symbol ($version) ]($style)'
 
 [rust]
 symbol = ""
-style = "fg:#282828 bg:#b57614"
+style = "fg:#1e1e2e bg:#f9e2af"
 format = '[ $symbol ($version) ]($style)'
 
 [java]
 symbol = ""
-style = "fg:#282828 bg:#b57614"
+style = "fg:#1e1e2e bg:#f9e2af"
 format = '[ $symbol ($version) ]($style)'
 
 [nodejs]
 symbol = ""
-style = "fg:#282828 bg:#b57614"
+style = "fg:#1e1e2e bg:#f9e2af"
 format = '[ $symbol ($version) ]($style)'
 
 [c]
 symbol = ""
-style = "fg:#282828 bg:#b57614"
+style = "fg:#1e1e2e bg:#f9e2af"
 format = '[ $symbol ($version) ]($style)'
 
 [lua]
 symbol = ""
-style = "fg:#282828 bg:#b57614"
+style = "fg:#1e1e2e bg:#f9e2af"
 format = '[ $symbol ($version) ]($style)'
 
 [docker_context]
 symbol = ""
-style = "fg:#282828 bg:#79740e"
+style = "fg:#1e1e2e bg:#a6e3a1"
 format = '[ $symbol $context ]($style)'
 
 [conda]
-style = "fg:#282828 bg:#79740e"
+style = "fg:#1e1e2e bg:#a6e3a1"
 format = '[ $symbol $environment ]($style)'
 
 [nix_shell]
 symbol = ""
-style = "fg:#ebdbb2 bg:#427b58"
+style = "fg:#1e1e2e bg:#94e2d5"
 format = '[ $symbol $name ]($style)'
 
 [time]
 disabled = false
 time_format = "%R"
-style = "fg:#282828 bg:#d65d0e"
+style = "fg:#1e1e2e bg:#fab387"
 format = '[  $time ]($style)'
 
 [character]

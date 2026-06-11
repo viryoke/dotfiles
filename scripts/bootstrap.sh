@@ -2,6 +2,7 @@
 set -euo pipefail
 
 DOTFILES_REPO="https://github.com/viryoke/dotfiles.git"
+DOTFILES_REPO_MIRROR="https://gitcode.com/viryoke/dotfiles.git"
 DOTFILES_DIR="${HOME}/dotfiles"
 
 echo ""
@@ -144,74 +145,8 @@ if [ -d /nix ] && [ "$(stat -c '%u' /nix 2>/dev/null || stat -f '%u' /nix 2>/dev
   sudo chown -R "$(whoami)" /nix
 fi
 
-# Configure system-level /etc/nix/nix.conf (daemon level — always respected)
-# Uses sed to replace existing lines (not grep+append) so wrong values get corrected.
-NIX_SUBSTITUTERS="https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store https://mirror.sjtu.edu.cn/nix-channels/store https://cache.nixos.org"
-NIX_TRUSTED_KEYS="cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-
-if [ ! -f /etc/nix/nix.conf ]; then
-  sudo mkdir -p /etc/nix
-  sudo tee /etc/nix/nix.conf > /dev/null 2>&1 << SYSCONF
-trusted-users = root $USER
-substituters = ${NIX_SUBSTITUTERS}
-trusted-public-keys = ${NIX_TRUSTED_KEYS}
-SYSCONF
-  echo "Created /etc/nix/nix.conf (trusted-users + substituters + keys)"
-else
-  # Determine sed in-place flag (macOS: -i '', Linux: -i)
-  if [ "$OS" = "darwin" ]; then SED_INPLACE=(sed -i ''); else SED_INPLACE=(sed -i); fi
-
-  # trusted-users: append user if not already present
-  if ! grep -q "trusted-users.*$USER" /etc/nix/nix.conf 2>/dev/null; then
-    if grep -q "^trusted-users" /etc/nix/nix.conf 2>/dev/null; then
-      sudo "${SED_INPLACE[@]}" "s/^trusted-users.*/& $USER/" /etc/nix/nix.conf 2>/dev/null && \
-        echo "Updated trusted-users (added $USER)"
-    else
-      echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && \
-        echo "Added trusted-users = root $USER"
-    fi
-  fi
-  # substituters: replace existing line or append
-  if grep -q "^substituters" /etc/nix/nix.conf 2>/dev/null; then
-    sudo "${SED_INPLACE[@]}" "s|^substituters.*|substituters = ${NIX_SUBSTITUTERS}|" /etc/nix/nix.conf 2>/dev/null && \
-      echo "Updated substituters"
-  else
-    echo "substituters = ${NIX_SUBSTITUTERS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && \
-      echo "Added substituters"
-  fi
-  # trusted-public-keys: replace existing line or append
-  if grep -q "^trusted-public-keys" /etc/nix/nix.conf 2>/dev/null; then
-    sudo "${SED_INPLACE[@]}" "s|^trusted-public-keys.*|trusted-public-keys = ${NIX_TRUSTED_KEYS}|" /etc/nix/nix.conf 2>/dev/null && \
-      echo "Updated trusted-public-keys"
-  else
-    echo "trusted-public-keys = ${NIX_TRUSTED_KEYS}" | sudo tee -a /etc/nix/nix.conf > /dev/null 2>&1 && \
-      echo "Added trusted-public-keys"
-  fi
-fi
-
-# Restart Nix daemon to pick up /etc/nix/nix.conf changes (if daemon exists)
-if [ "$OS" = "darwin" ]; then
-  if launchctl print system/org.nixos.nix-daemon &>/dev/null; then
-    sudo launchctl kickstart -k system/org.nixos.nix-daemon 2>/dev/null && echo "Nix daemon restarted"
-  else
-    echo "No Nix daemon (single-user mode) — config applied immediately"
-  fi
-else
-  if systemctl is-enabled nix-daemon.service &>/dev/null || systemctl is-enabled nix-daemon.socket &>/dev/null; then
-    sudo systemctl restart nix-daemon.service 2>/dev/null && echo "Nix daemon restarted" \
-      || sudo systemctl restart nix-daemon.socket 2>/dev/null && echo "Nix daemon socket restarted" \
-      || echo "⚠ daemon restart failed"
-  else
-    # Single-user mode: no daemon. Remove stale socket if present
-    # (leftover from previous multi-user install causes "Connection refused")
-    if [ -S /nix/var/nix/daemon-socket/socket ] 2>/dev/null; then
-      echo "Removing stale Nix daemon socket..."
-      sudo rm -f /nix/var/nix/daemon-socket/socket 2>/dev/null && echo "✓ Stale socket removed" \
-        || echo "⚠ Run manually: sudo rm -f /nix/var/nix/daemon-socket/socket"
-    fi
-    echo "No Nix daemon (single-user mode) — config applied immediately"
-  fi
-fi
+# Configure Nix mirrors (shared script)
+bash "$DOTFILES_DIR/scripts/configure-nix-mirrors.sh"
 echo ""
 echo "--- Phase 4: Clone Repository ---"
 if [ -d "$DOTFILES_DIR/.git" ]; then
@@ -220,11 +155,15 @@ if [ -d "$DOTFILES_DIR/.git" ]; then
 elif [ -d "$DOTFILES_DIR" ]; then
   echo "$DOTFILES_DIR exists but is not a git repo, removing..."
   rm -rf "$DOTFILES_DIR"
-  git clone "$DOTFILES_REPO" "$DOTFILES_DIR"
+  git clone "$DOTFILES_REPO" "$DOTFILES_DIR" || git clone "$DOTFILES_REPO_MIRROR" "$DOTFILES_DIR"
 else
   echo "Cloning to $DOTFILES_DIR..."
-  git clone "$DOTFILES_REPO" "$DOTFILES_DIR"
+  git clone "$DOTFILES_REPO" "$DOTFILES_DIR" || git clone "$DOTFILES_REPO_MIRROR" "$DOTFILES_DIR"
 fi
+
+# Configure dual push (GitHub + GitCode)
+git -C "$DOTFILES_DIR" remote set-url --add --push origin "$DOTFILES_REPO"
+git -C "$DOTFILES_DIR" remote set-url --add --push origin "$DOTFILES_REPO_MIRROR"
 echo ""
 
 # --- Phase 5: Deploy Dotfiles ---
@@ -253,32 +192,9 @@ if command -v nix &>/dev/null; then
 fi
 echo ""
 
-# --- Phase 7: Set Default Shell ---
-echo "--- Phase 7: Default Shell ---"
-if command -v zsh &>/dev/null; then
-  ZSH_PATH="$(which zsh)"
-
-  if [ "$OS" = "linux" ]; then
-    if ! grep -q "$ZSH_PATH" /etc/shells 2>/dev/null; then
-      echo "$ZSH_PATH" | sudo tee -a /etc/shells > /dev/null
-    fi
-  fi
-
-  if [ "$OS" = "linux" ]; then
-    CURRENT_SHELL=$(getent passwd "$USER" 2>/dev/null | cut -d: -f7)
-  else
-    CURRENT_SHELL=$(dscl . -read /Users/"$USER" UserShell 2>/dev/null | awk '{print $2}')
-  fi
-  if [ "$CURRENT_SHELL" != "$ZSH_PATH" ]; then
-    chsh -s "$ZSH_PATH" || echo "Set zsh manually: sudo chsh -s $ZSH_PATH $USER"
-  else
-    echo "zsh is already the default shell."
-  fi
-fi
-echo ""
-
-# --- Phase 8: Verification ---
-echo "--- Phase 8: Verification ---"
+# --- Phase 7: Verification ---
+# Default shell (fish) is set by orchest script Phase 4
+echo "--- Phase 7: Verification ---"
 bash "$DOTFILES_DIR/scripts/doctor.sh" || true
 
 echo ""
