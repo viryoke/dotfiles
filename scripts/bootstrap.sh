@@ -114,7 +114,7 @@ if [ "$OS" = "linux" ]; then
         echo "✓ Arch Linux ARM mirrors configured"
       fi
     fi
-    sudo pacman -S --needed --noconfirm git chezmoi
+    sudo pacman -S --needed --noconfirm git chezmoi age
   else
     echo "ERROR: Only Arch-based systems (CachyOS) are supported for Linux."
     exit 1

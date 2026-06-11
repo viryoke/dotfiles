@@ -44,6 +44,19 @@ echo "── Phase 2: Nix home-manager + Clash Verge ──"
 if command -v nix &>/dev/null; then
   . /etc/profile.d/nix.sh 2>/dev/null || . "$HOME/.nix-profile/etc/profile.d/nix.sh" 2>/dev/null || true
 
+  # Ensure age is available for secret decryption
+  if ! command -v age &>/dev/null; then
+    {{ if eq .chezmoi.os "linux" -}}
+    if command -v pacman &>/dev/null; then
+      sudo pacman -S --needed --noconfirm age 2>/dev/null
+    fi
+    {{ else if eq .chezmoi.os "darwin" -}}
+    if command -v brew &>/dev/null; then
+      brew install age 2>/dev/null
+    fi
+    {{ end -}}
+  fi
+
   # Pre-load GitHub token to avoid API rate limits during flake fetch.
   # Priority: 1) GITHUB_TOKEN env var  2) age decrypt  3) ssh-keygen + age decrypt
   _GH_TOKEN=""
