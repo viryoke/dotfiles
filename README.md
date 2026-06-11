@@ -64,6 +64,7 @@ graph LR
 |------|------|------|------|----------|
 | 台式机 | CachyOS (Arch) | x86_64 | i9-14900KF · 64 GB | `cachyos-desktop` |
 | 笔记本 | macOS Sequoia | aarch64 | Apple Silicon | `macbook` |
+| ARM 虚拟机 | Arch Linux ARM | aarch64 | OrbStack VM | `arch-arm` |
 
 ## 系统架构
 
@@ -125,7 +126,7 @@ graph TB
     subgraph flake["Nix Flake (flake.nix)"]
         direction TB
         O["overlays/<br/>自定义 Nix 包覆写"]
-        H["hosts/<br/>cachyos-desktop/ · macbook/<br/>每台的模块导入 + home 配置"]
+        H["hosts/<br/>cachyos-desktop/ · macbook/ · arch-arm/<br/>每台的模块导入 + home 配置"]
         M["modules/<br/>shared/ · linux/ · darwin/"]
     end
 
@@ -261,8 +262,10 @@ chezmoi apply
 │   ├── cachyos-desktop/
 │   │   ├── default.nix                   模块导入 + home 配置
 │   │   └── hardware.nix                  硬件相关设置
-│   └── macbook/
-│       └── default.nix                   模块导入 + home 配置
+│   ├── macbook/
+│   │   └── default.nix                   模块导入 + home 配置
+│   └── arch-arm/
+│       └── default.nix                   模块导入 + home 配置（aarch64-linux）
 │
 ├── modules/                            可复用的 Nix 模块
 │   ├── shared/                         跨平台模块
