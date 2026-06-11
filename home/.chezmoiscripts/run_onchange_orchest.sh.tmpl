@@ -270,8 +270,9 @@ pids=()
 (
   echo "[pacman] installing..."
   PKGS=( {{ range .packages.linux.pacman }}"{{ . }}" {{ end }})
-  {{ if eq .chezmoi.arch "amd64" -}}
-  PKGS+=( {{ range .packages.linux.pacman_amd64 }}"{{ . }}" {{ end }})
+  {{ if eq .hostname "cachyos-desktop" -}}
+  # Desktop-only packages (GUI, input methods)
+  PKGS+=( {{ range .packages.linux.pacman_desktop }}"{{ . }}" {{ end }})
   {{ end -}}
   if sudo pacman -S --needed --noconfirm "${PKGS[@]}" 2>&1; then
     echo "[pacman] ✓ done"
@@ -281,7 +282,8 @@ pids=()
 ) &
 pids+=($!)
 
-# --- Linux: AUR (batch) ---
+{{ if eq .chezmoi.arch "amd64" -}}
+# --- Linux: AUR (batch, amd64 only) ---
 (
   AUR_PKGS=( {{ range .packages.linux.aur }}"{{ . }}" {{ end }})
   if command -v yay &>/dev/null; then
@@ -303,8 +305,10 @@ pids+=($!)
   fi
 ) &
 pids+=($!)
+{{ end -}}
 
-# --- Linux: Flatpak ---
+{{ if eq .hostname "cachyos-desktop" -}}
+# --- Linux: Flatpak (desktop only) ---
 (
   echo "[flatpak] installing..."
   flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
@@ -314,6 +318,7 @@ pids+=($!)
   echo "[flatpak] ✓ done"
 ) &
 pids+=($!)
+{{ end -}}
 {{ end -}}
 
 {{ if eq .chezmoi.os "darwin" -}}

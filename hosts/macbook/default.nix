@@ -11,6 +11,7 @@
     ../../modules/shared/dev-cc.nix
     ../../modules/shared/dev-js.nix
     ../../modules/shared/dev-lua.nix
+    ../../modules/shared/ai-tools.nix
     ../../modules/shared/exam-prep.nix
     ../../modules/shared/ai-learning.nix
     ../../modules/shared/secrets.nix

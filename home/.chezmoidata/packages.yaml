@@ -1,12 +1,9 @@
 packages:
   linux:
+    # Common packages for all Linux hosts (desktop and server/VM)
     pacman:
       - "git"
       - "neovim"
-      - "flatpak"
-      - "fcitx5"
-      - "fcitx5-rime"
-      - "fcitx5-configtool"
       - "lazygit"
       - "github-cli"
       - "ripgrep"
@@ -24,12 +21,16 @@ packages:
       - "htop"
       - "btop"
       - "tree"
+      - "tailscale"
+    # Desktop-only packages (GUI, input methods)
+    pacman_desktop:
+      - "flatpak"
+      - "fcitx5"
+      - "fcitx5-rime"
+      - "fcitx5-configtool"
       - "fcitx5-gtk"
       - "fcitx5-chinese-addons"
-      - "tailscale"
-    pacman_amd64:
-      - "alacritty"
-      - "fish"
+    # GUI applications via Flatpak (desktop-only)
     flatpak:
       - "org.mozilla.firefox"
       - "org.telegram.desktop"
@@ -37,6 +38,7 @@ packages:
       - "com.discordapp.Discord"
       - "net.ankiweb.Anki"
       - "md.obsidian.Obsidian"
+    # AUR packages (amd64-only, gated in orchest script)
     aur:
       - "baidunetdisk-bin"
   darwin:

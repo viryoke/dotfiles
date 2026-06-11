@@ -15,7 +15,6 @@
     ../../modules/shared/ai-learning.nix
     ../../modules/shared/secrets.nix
     ../../modules/linux/packages.nix
-    ../../modules/linux/secrets.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
