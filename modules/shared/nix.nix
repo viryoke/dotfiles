@@ -12,7 +12,7 @@
 
     if [ -n "${config.age.secrets.gitcode_token.path or ""}" ] && [ -f "${config.age.secrets.gitcode_token.path}" ]; then
       _gcToken="$(cat "${config.age.secrets.gitcode_token.path}")"
-      [ -n "$_gcToken" ] && _tokens="$_tokens${_tokens:+ }gitcode.com=$_gcToken"
+      [ -n "$_gcToken" ] && _tokens="$_tokens''${_tokens:+ }gitcode.com=$_gcToken"
     fi
 
     if [ -n "$_tokens" ]; then
