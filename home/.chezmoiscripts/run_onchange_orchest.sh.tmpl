@@ -43,6 +43,19 @@ echo "── Phase 2: Nix home-manager + Clash Verge ──"
 # --- Nix Home Manager ---
 if command -v nix &>/dev/null; then
   . /etc/profile.d/nix.sh 2>/dev/null || . "$HOME/.nix-profile/etc/profile.d/nix.sh" 2>/dev/null || true
+
+  # Pre-decrypt GitHub token to avoid API rate limits during flake fetch
+  # (agenix normally decrypts during home-manager activation, but we need it earlier)
+  SECRETS_DIR="{{ .chezmoi.workingTree }}/secrets"
+  SSH_KEY="$HOME/.ssh/id_ed25519"
+  if [ -f "$SECRETS_DIR/github_token.age" ] && [ -f "$SSH_KEY" ] && command -v age &>/dev/null; then
+    GH_TOKEN=$(age --decrypt --identity "$SSH_KEY" "$SECRETS_DIR/github_token.age" 2>/dev/null || true)
+    if [ -n "$GH_TOKEN" ]; then
+      export NIX_CONFIG="access-tokens = github.com=$GH_TOKEN"
+      echo "[nix-hm] ✓ GitHub token pre-loaded (avoids API rate limits)"
+    fi
+  fi
+
   echo "[nix-hm] switching..."
   cd "{{ .chezmoi.workingTree }}"
   if nix run --accept-flake-config --extra-experimental-features "nix-command flakes" home-manager -- switch --flake ".#{{ .username }}@{{ .hostname }}" --impure 2>&1; then
@@ -50,6 +63,7 @@ if command -v nix &>/dev/null; then
   else
     echo "[nix-hm] ⚠ home-manager switch failed"
   fi
+  unset NIX_CONFIG GH_TOKEN
 else
   echo "[nix-hm] ⚠ nix not found, skipping"
 fi
