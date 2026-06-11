@@ -149,9 +149,10 @@ echo ""
 echo "--- Phase 3: Nix Package Manager ---"
 if ! command -v nix &>/dev/null; then
   echo "Installing Nix (single-user mode)..."
-  # Use TUNA mirror for Nix binary download (China network optimization)
+  # Use TUNA mirror for both install script and binary cache (China network optimization)
+  export NIX_INSTALL_SCRIPT="https://mirrors.tuna.tsinghua.edu.cn/nix/latest/install"
   export NIX_BINARY_CACHE="https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
-  sh <(curl -L https://nixos.org/nix/install) --no-daemon
+  sh <(curl -L "$NIX_INSTALL_SCRIPT") --no-daemon
 fi
 # Load Nix into current shell
 export PATH="/nix/var/nix/profiles/default/bin:$PATH"
