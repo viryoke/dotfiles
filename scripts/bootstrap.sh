@@ -144,9 +144,6 @@ if [ -d /nix ] && [ "$(stat -c '%u' /nix 2>/dev/null || stat -f '%u' /nix 2>/dev
   echo "/nix is owned by root — fixing ownership for single-user mode..."
   sudo chown -R "$(whoami)" /nix
 fi
-
-# Configure Nix mirrors (shared script)
-bash "$DOTFILES_DIR/scripts/configure-nix-mirrors.sh"
 echo ""
 echo "--- Phase 4: Clone Repository ---"
 if [ -d "$DOTFILES_DIR/.git" ]; then
@@ -164,6 +161,9 @@ fi
 # Configure dual push (GitHub + GitCode)
 git -C "$DOTFILES_DIR" remote set-url --add --push origin "$DOTFILES_REPO"
 git -C "$DOTFILES_DIR" remote set-url --add --push origin "$DOTFILES_REPO_MIRROR"
+
+# Configure Nix mirrors (shared script, now available after clone)
+bash "$DOTFILES_DIR/scripts/configure-nix-mirrors.sh"
 echo ""
 
 # --- Phase 5: Deploy Dotfiles ---
