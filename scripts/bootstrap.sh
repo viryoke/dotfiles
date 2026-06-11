@@ -69,11 +69,23 @@ else
   echo "Hostname is used to select the Nix home-manager configuration."
   echo "Detected system hostname: $RAW_HOSTNAME"
   echo "Available configurations in flake.nix:"
-  echo "  - cachyos-desktop (CachyOS Linux)"
-  echo "  - macbook (macOS)"
+  echo "  - cachyos-desktop (CachyOS Linux, x86_64)"
+  echo "  - arch-arm (Arch Linux ARM, aarch64)"
+  echo "  - macbook (macOS, aarch64)"
   echo ""
-  read -rp "Which configuration to use? [cachyos-desktop/macbook]: " HOSTNAME < /dev/tty
-  HOSTNAME="${HOSTNAME:-$RAW_HOSTNAME}"
+  
+  # Smart default based on detected OS and architecture
+  DEFAULT_HOST="$RAW_HOSTNAME"
+  if [ "$OS" = "linux" ] && [ "$ARCH" = "aarch64" ]; then
+    DEFAULT_HOST="arch-arm"
+  elif [ "$OS" = "linux" ] && [ "$ARCH" = "x86_64" ]; then
+    DEFAULT_HOST="cachyos-desktop"
+  elif [ "$OS" = "darwin" ]; then
+    DEFAULT_HOST="macbook"
+  fi
+  
+  read -rp "Which configuration to use? [cachyos-desktop/arch-arm/macbook] (default: $DEFAULT_HOST): " HOSTNAME < /dev/tty
+  HOSTNAME="${HOSTNAME:-$DEFAULT_HOST}"
 
   echo ""
   echo "Configuration summary:"
