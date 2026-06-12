@@ -75,8 +75,12 @@ if [ "$NIX_CONF_CHANGED" = true ]; then
       || { sudo pkill -HUP nix-daemon 2>/dev/null && echo "[nix] ✓ daemon reloaded (SIGHUP)" \
         || echo "[nix] ⚠ daemon restart failed — run: sudo launchctl kickstart -k system/org.nixos.nix-daemon"; }
   else
-    sudo systemctl restart nix-daemon.service 2>/dev/null && echo "[nix] ✓ daemon restarted" \
-      || echo "[nix] ⚠ daemon restart failed — run: sudo systemctl restart nix-daemon"
+    if systemctl list-unit-files nix-daemon.service 2>/dev/null | grep -q nix-daemon; then
+      sudo systemctl restart nix-daemon.service 2>/dev/null && echo "[nix] ✓ daemon restarted" \
+        || echo "[nix] ⚠ daemon restart failed — run: sudo systemctl restart nix-daemon"
+    else
+      echo "[nix] ✓ single-user mode, no daemon restart needed"
+    fi
   fi
   sleep 2
 fi
