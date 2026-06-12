@@ -1,0 +1,34 @@
+[workspace]
+name = "ai-learning"
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "linux-64", "linux-aarch64"]
+
+[dependencies]
+python = "3.11.*"
+
+[pypi-dependencies]
+jupyterlab = "*"
+notebook = "*"
+torch = "*"
+torchvision = "*"
+torchaudio = "*"
+transformers = "*"
+datasets = "*"
+accelerate = "*"
+scikit-learn = "*"
+pandas = "*"
+numpy = "*"
+matplotlib = "*"
+seaborn = "*"
+tensorboard = "*"
+
+[activation.env]
+PIP_INDEX_URL = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
+PIP_TRUSTED_HOST = "mirrors.tuna.tsinghua.edu.cn"
+HF_ENDPOINT = "https://hf-mirror.com"
+
+[tasks]
+jupyter = "jupyter lab --notebook-dir=."
+
+[feature.init.tasks.setup]
+cmd = "mkdir -p data models notebooks"

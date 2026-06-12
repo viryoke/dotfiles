@@ -1,5 +1,4 @@
-.devenv
-.direnv
+.pixi/
 data/
 models/
 __pycache__/
