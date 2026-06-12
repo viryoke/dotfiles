@@ -29,6 +29,4 @@ HF_ENDPOINT = "https://hf-mirror.com"
 
 [tasks]
 jupyter = "jupyter lab --notebook-dir=."
-
-[feature.init.tasks.setup]
-cmd = "mkdir -p data models notebooks"
+setup = "mkdir -p data models notebooks"
