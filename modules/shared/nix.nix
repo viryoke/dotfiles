@@ -15,12 +15,12 @@
       [ -n "$_gcToken" ] && _tokens="$_tokens''${_tokens:+ }gitcode.com=$_gcToken"
     fi
 
+    mkdir -p "$_nixConfDir"
     if [ -n "$_tokens" ]; then
-      mkdir -p "$_nixConfDir"
       echo "access-tokens = $_tokens" > "$_tokenFile"
       chmod 600 "$_tokenFile"
     else
-      [ -f "$_tokenFile" ] && rm -f "$_tokenFile"
+      : > "$_tokenFile"
     fi
     unset _nixConfDir _tokenFile _tokens _ghToken _gcToken
   '';
